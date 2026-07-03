@@ -1,0 +1,84 @@
+# ==========================================
+# Python Environment & Dependencies
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ==========================================
+# Data & Scraping Artifacts
+# ==========================================
+data/
+*.csv
+*.json
+*.xlsx
+*.sqlite
+*.db
+
+# ==========================================
+# Testing & Code Quality Tools
+# ==========================================
+.htmlcov/
+.tox/
+.nosetests/
+.pytest_cache/
+.chk/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.ruff_cache/
+.mypy_cache/
+
+# ==========================================
+# VS Code
+# ==========================================
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# JetBrains (PyCharm)
+.idea/
+
+# ==========================================
+# OS
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
