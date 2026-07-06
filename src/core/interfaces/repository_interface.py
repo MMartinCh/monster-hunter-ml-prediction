@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
-from src.core.monster_data import MonsterData
+from src.core.dataclasses.monster_data import MonsterData
 
 class AbstractMonsterRepository(ABC):
     """Interface for saving and retrieving monster datasets."""

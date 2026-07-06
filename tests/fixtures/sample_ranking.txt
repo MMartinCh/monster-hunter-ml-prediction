@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+    
+<head prefix="og: http://ogp.me/ns#">
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="description" content="All-new events, merch, and campaigns on their way for the 20th anniversary of the Monster Hunter series!">
+<meta name="keywords" content="Monster Hunter, 20th Anniversary, Action, Hunting">
+
+<title>MONSTER HUNTER 20th ANNIVERSARY Website｜CAPCOM</title>
+
+<!-- SP -->
+<meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon-precomposed" href="../../../assets/images/common/icon.png">
+<link rel="canonical" href="https://www.monsterhunter.com/20th/en/">
+
+<!-- OGP -->
+<meta property="og:title" content="MONSTER HUNTER 20th ANNIVERSARY Website｜CAPCOM">
+<meta property="og:description" content="All-new events, merch, and campaigns on their way for the 20th anniversary of the Monster Hunter series!">
+<meta property="og:image" content="https://www.monsterhunter.com/20th/assets/images/common/share.png">
+
+<!-- Twitter-->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MONSTER HUNTER 20th ANNIVERSARY Website｜CAPCOM">
+<meta name="twitter:description" content="All-new events, merch, and campaigns on their way for the 20th anniversary of the Monster Hunter series!">
+<meta name="twitter:image:src" content="https://www.monsterhunter.com/20th/assets/images/common/share.png"><!-- alternate -->
+<link rel="alternate" href="https://www.monsterhunter.com/20th/ja-jp/" hreflang="ja">
+<link rel="alternate" href="https://www.monsterhunter.com/20th/en/" hreflang="en">
+
+<!-- base -->
+<link rel="stylesheet" href="https://www.capcom-games.com/common/css/reset.css">
+<link rel="stylesheet" href="https://www.capcom-games.com/common/css/titlefooter.css">
+<!-- libs -->
+<link rel="stylesheet" href="../../../assets/css/library.css">
+<!-- site -->
+<link rel="stylesheet" href="../../../assets/css/style.css?24032700">
+<!-- page -->
+<link rel="stylesheet" href="../../../assets/css/page/result.css?24032700">
+<link rel="stylesheet" href="../../../assets/css/state.css?24032700">
+
+<!-- gtm -->
+<script type="text/javascript" src="https://ff.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=W5kRrDV-akEyw6Foe1cyQXtgj9N3KKfVi6ojJEgyzQDtb4lrH_JXzvBYSNct8jXXUjN0uuf6IoIvO8LFk7I5AUiV30j9U2Cdpxin8dXUoHg" charset="UTF-8"></script><script src="../../../assets/js/gtm.js" defer></script>
+<!-- jQuery -->
+<script src="https://www.capcom-games.com/common/js/jquery-3.6.3.min.js"></script>
+<!-- libs -->
+<script src="../../../assets/js/library.js" defer></script>
+<!-- site -->
+<script src="../../../assets/js/config.js?24032700" defer></script>
+
+  <script src="../../../assets/js/page/page.js?24032700" defer></script>
+  
+
+</head>
+
+<body class="page-result page-topics lang-en" data-page="result" data-lang="en">
+
+<header>
+    <div class="logo">
+        <a href="../../">
+            <picture>
+                <source srcset="../../../assets/images/vote-monster/logo-mh20th.webp" type="image/webp">
+                <img src="../../../assets/images/vote-monster/logo-mh20th.png" alt="MONSTER HUNTER 20th ANNIVERSARY Website">
+            </picture>
+        </a>
+    </div>
+</header>
+<div class="wrapper" id="wrapper">
+
+  <main class="main">
+    <div class="sec sec-fv" id="fv">
+      <div class="title">
+        <div class="title-inner">
+          <h2 class="title-bar">
+                <picture>
+                  <source srcset="../../../assets/images/vote-monster/result/header-title-index-sp-en.webp" media="(max-width: 768px)" type="image/webp">
+                  <source srcset="../../../assets/images/vote-monster/result/header-title-index-sp-en.png" media="(max-width: 768px)">
+                  <source srcset="../../../assets/images/vote-monster/result/header-title-index-en.webp" type="image/webp">
+                  <img src="../../../assets/images/vote-monster/result/header-title-index-en.png" alt="MONSTER HUNTER 20th ANNIVERSARY Hunters' Choice (Top Monster)">
+                </picture>
+          </h2>
+        </div>
+      </div>
+    </div>
+    <div class="sec sec-vote" id="vote">
+      <div class="sec-inner">
+        <div class="lead">
+          <p>The votes are now in for the most popular Monster Hunter series monster, <br class="hide-sp">out of the 229 available as of 2023.</p>
+        </div>
+        <div class="org-pic">
+          <div class="org-pic-block">
+            <h4 class="org-pic-block-ttl decoline-ttl">
+              <span>Original Illustration</span>
+            </h4>
+            <a href="../../../assets/images/vote-monster/result/org-pic.jpg" target="_blank">
+            <div class="org-pic-img">
+              <picture>
+                <img src="../../../assets/images/vote-monster/result/thumb-org-pic.jpg" alt="">
+              </picture>
+              <div class="btn-zoom">
+                <a href="../../../assets/images/vote-monster/result/org-pic.jpg" target="_blank">
+                  <img src="../../../assets/images/common/icon_zoom.png" alt="">
+                </a>
+              </div>
+            </div>
+            </a>
+            <div class="org-pic-text">
+              <p>The development team created an original illustration featuring the top three monsters.</p>
+            </div>
+          </div>
+        </div>
+        <div class="video">
+          <div class="lead">
+            <p>A video announcement of the results is also available.</p>
+          </div>
+          <div class="btn">
+            <a href="https://www.youtube.com/watch?v=cxjiXvaZTxc" class="btn-vote" data-js-trigger="mfpVideo" target="_blank">
+              <span>Results Announcement Video</span>
+            </a>
+          </div>
+        </div>
+        <div class="ranking">
+          <div class="ranking-inner">
+            <h4 class="ranking-ttl">
+              <span>Rank</span>
+            </h4>
+            <ul class="ranking-list">
+              
+                
+                
+
+              <li class="no-1">
+                <a href="https://www.youtube.com/watch?v=LOLFySDpCgc" data-js-trigger="mfpVideo" target="_blank">
+                  <div class="img">
+                    <picture>
+                      <source srcset="../../../assets/images/vote-monster/result/1-sp.jpg" media="(max-width: 768px)">
+                      <img src="../../../assets/images/vote-monster/result/1.jpg" alt="">
+                    </picture>
+                  </div>
+                  <div class="name">
+                    <img src="../../../assets/images/vote-monster/result/icon_no1_en.png" alt="">
+                    <span class="ff-serif">Zinogre</span>
+                  </div>
+                  <div class="btn-video">
+                    <img src="../../../assets/images/common/icon_video.png" alt="">
+                  </div>
+                </a> 
+              </li>
+                
+                
+
+              <li class="no-2-3">
+                <a href="https://www.youtube.com/watch?v=Z2UAemHTBwM" data-js-trigger="mfpVideo" target="_blank">
+                  <div class="img">
+                    <picture>
+                      <source srcset="../../../assets/images/vote-monster/result/2-sp.jpg" media="(max-width: 768px)">
+                      <img src="../../../assets/images/vote-monster/result/2.jpg" alt="">
+                    </picture>
+                  </div>
+                  <div class="name">
+                    <img src="../../../assets/images/vote-monster/result/icon_no2_en.png" alt="">
+                    <span class="ff-serif no2">Nergigante</span>
+                  </div>
+                  <div class="btn-video">
+                    <img src="../../../assets/images/common/icon_video.png" alt="">
+                  </div>
+                </a>
+              </li>
+                
+                
+
+                <li class="no-2-3 no-3">
+                  <a href="https://www.youtube.com/watch?v=CFSp5s8WBSk" data-js-trigger="mfpVideo" target="_blank">
+                    <div class="img">
+                      <picture>
+                        <source srcset="../../../assets/images/vote-monster/result/3-sp.jpg" media="(max-width: 768px)">
+                        <img src="../../../assets/images/vote-monster/result/3.jpg" alt="">
+                      </picture>
+                    </div>
+                    <div class="name">
+                      <img src="../../../assets/images/vote-monster/result/icon_no3_en.png" alt="">
+                      <span class="ff-serif no3">Lagiacrus</span>
+                    </div>
+                    <div class="btn-video">
+                      <img src="../../../assets/images/common/icon_video.png" alt="">
+                    </div>
+                  </a>
+                </li>
+                
+                
+
+              <li class="no-4-18">
+                <div class="no">No.4</div>
+                <div class="img"><img src="../../../assets/images/vote-monster/result/4.jpg" alt=""></div>
+                <div class="name">Valstrax</div>
+              </li>
+                
+                
+
+              <li class="no-4-18">
+                <div class="no">No.5</div>
+                <div class="img"><img src="../../../assets/images/vote-monster/result/5.jpg" alt=""></div>
+                <div class="name">Gore Magala</div>
+              </li>
+                
+                
+
+              <li class="no-4-18">
+                <div class="no">No.6</div>
+                <div class="img"><img src="../../../assets/images/vote-monster/result/6.jpg" alt=""></div>
+                <div class="name">Velkhana</div>
+              </li>
+                
+                
+
+              <li class="no-4-18">
+                <div class="no">No.7</div>
+                <div class="img"><img src="../../../assets/images/vote-monster/result/7.jpg" alt=""></div>
+                <div class="name">Nargacuga</div>
+              </li>
+                
+                
+
+              <li class="no-4-18">
+                <div class="no">No.8</div>
+                <div class="img"><img src="../../../assets/images/vote-monster/result/8.jpg" alt=""></div>
+                <div class="name">Fatalis</div>
+              </li>
+                
+                
+
+              <li class="no-4-18">
+                <div class="no">No.9</div>
+                <div class="img"><img src="../../../assets/images/vote-monster/result/9.jpg" alt=""></div>
+                <div class="name">Ruiner Nergigante</div>
+              </li>
+                
+                
+
+              <li class="no-4-18">
+                <div class="no">No.10</div>
+                <div class="img"><img src="../../../assets/images/vote-monster/result/10.jpg" alt=""></div>
+                <div class="name">Alatreon</div>
+              </li>
+                
+                
+
+              <li class="no-4-18">
+                <div class="no">No.11</div>
+                <div class="img"><img src="../../../assets/images/vote-monster/result/11.jpg" alt=""></div>
+                <div class="name">Stygian Zinogre</div>
+              </li>
+                
+                
+
+              <li class="no-4-18">
+                <div class="no">No.12</div>
+                <div class="img"><img src="../../../assets/images/vote-monster/result/12.jpg" alt=""></div>
+                <div class="name">Abyssal Lagiacrus</div>
+              </li>
+                
+                
+
+              <li class="no-4-18">
+                <div class="no">No.13</div>
+                <div class="img"><img src="../../../assets/images/vote-monster/result/13.jpg" alt=""></div>
+                <div class="name">Primordial Malzeno</div>
+              </li>
+                
+                
+
+              <li class="no-4-18">
+                <div class="no">No.14</div>
+                <div class="img"><img src="../../../assets/images/vote-monster/result/14.jpg" alt=""></div>
+                <div class="name">Mizutsune</div>
+              </li>
+                
+                
+
+              <li class="no-4-18">
+                <div class="no">No.15</div>
+                <div class="img"><img src="../../../assets/images/vote-monster/result/15.jpg" alt=""></div>
+                <div class="name">Old Fatalis</div>
+              </li>
+                
+                
+
+              <li class="no-4-18">
+                <div class="no">No.16</div>
+                <div class="img"><img src="../../../assets/images/vote-monster/result/16.jpg" alt=""></div>
+                <div class="name">Safi'jiiva</div>
+              </li>
+                
+                
+
+              <li class="no-4-18">
+                <div class="no">No.17</div>
+                <div class="img"><img src="../../../assets/images/vote-monster/result/17.jpg" alt=""></div>
+                <div class="name">Brachydios</div>
+              </li>
+                
+                
+
+              <li class="no-4-18">
+                <div class="no">No.18</div>
+                <div class="img"><img src="../../../assets/images/vote-monster/result/18.jpg" alt=""></div>
+                <div class="name">Namielle</div>
+              </li>
+                
+                
+
+              <li class="no-4-18">
+                <div class="no">No.19</div>
+                <div class="img"><img src="../../../assets/images/vote-monster/result/19.jpg" alt=""></div>
+                <div class="name">Shagaru Magala</div>
+              </li>
+                
+                
+
+              <li class="no-4-18">
+                <div class="no">No.20</div>
+                <div class="img"><img src="../../../assets/images/vote-monster/result/20.jpg" alt=""></div>
+                <div class="name">Crimson Glow Valstrax</div>
+              </li>

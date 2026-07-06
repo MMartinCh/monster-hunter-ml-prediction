@@ -1,6 +1,6 @@
 import pathlib
 import pytest
-from src.core.monster_data import MonsterData
+from src.core.dataclasses.monster_data import MonsterData
 from src.data.repositories.csv_repository import LocalCsvRepository
 
 def test_csv_repository_save_and_load(tmp_path):
