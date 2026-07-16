@@ -1,18 +1,12 @@
 import itertools
 import logging
-import requests
 import sys
 
 from bs4 import BeautifulSoup
 from typing import List
-from src.core import AbstractWebScraper
-from src.core import RankingScraperItem
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)]
-)
+from src.core.dataclasses import RankingScraperItem
+from src.core.interfaces import AbstractWebScraper
 
 logger = logging.getLogger(__name__)
 
@@ -64,12 +58,13 @@ class RankingScraper(AbstractWebScraper[RankingScraperItem]):
         li_top_20_tags = ranking.find_all('li', class_ = 'no-4-18')
         li_bottom_tags = ranking.find_all('li', class_ = 'no-img')
 
-        for i, li in enumerate(itertools.chain(li_top_20_tags, li_bottom_tags)):
+        for li in itertools.chain(li_top_20_tags, li_bottom_tags):
             name_div = li.find('div', class_ = 'name')
+            rank_div = li.find('div', class_ = 'no')
 
             try:
                 name = name_div.text.strip()
-                rank = i + 4
+                rank = rank_div.text.split('.')[-1]
 
                 rank_dict = {"monster_name": name, "rank": rank}
                 rank_dict = RankingScraperItem(**rank_dict)

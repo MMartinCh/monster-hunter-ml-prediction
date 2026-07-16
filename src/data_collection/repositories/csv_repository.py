@@ -1,8 +1,14 @@
 import csv
+import logging
 import pathlib
+import sys
+
 from typing import List
-from src.core.interfaces.repository_interface import AbstractMonsterRepository
-from src.core.dataclasses.monster_data import MonsterData
+
+from src.core.interfaces import AbstractMonsterRepository
+from src.core.dataclasses import MonsterData
+
+logger = logging.getLogger(__name__)
 
 class LocalCsvRepository(AbstractMonsterRepository):
     """Handles persistence using flat CSV files."""
@@ -11,7 +17,8 @@ class LocalCsvRepository(AbstractMonsterRepository):
         self.file_path = file_path / "mh_repository.csv"
 
     def save(self, monsters: List[MonsterData]) -> None:
-        # Ensure the directory exists
+        logger.info(f"Saving Monster Data to...")
+
         self.file_path.parent.mkdir(parents=True, exist_ok=True)
         
         if not monsters:
@@ -29,6 +36,8 @@ class LocalCsvRepository(AbstractMonsterRepository):
                 #row["elements"] = ",".join(row["elements"])
                 #row["ailments"] = ",".join(row["ailments"])
                 writer.writerow(row)
+
+        logger.info(f"Data successfully saved to: {self.file_path}!")
 
     def load(self) -> List[MonsterData]:
         if not self.file_path.exists():
