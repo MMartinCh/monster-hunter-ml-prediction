@@ -3,7 +3,7 @@ import re
 
 from bs4 import BeautifulSoup
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from urllib.parse import urljoin
 
 from src.core.dataclasses import MHWikiItem
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class MHWikiScraper(AbstractWebScraper[MHWikiItem]):
     def __init__(self, 
-                 monsters_to_scrape: List[str] = None, 
+                 monsters_to_scrape: Optional[List[str]] = None, 
                  url: str = r"https://monsterhunterwiki.org/wiki/Monster_List"
                  ):
         
@@ -25,13 +25,11 @@ class MHWikiScraper(AbstractWebScraper[MHWikiItem]):
         
         soup = self.retrieve_soup()
 
-        if not self.monsters_to_scrape:
-             ...
+        scraping_monsters = self.monsters_to_scrape if self.monsters_to_scrape else self.get_monster_links(soup)
 
-        for monster in self.monsters_to_scrape:
-            monster_link = soup.find(monster)
-            monster_data = self.scrape_monster(monster_link)
-
+        for monster_link in scraping_monsters:
+            monster_page = self.retrieve_soup(monster_link)
+            monster_data = self.get_monster_info(monster_page)
             wiki_data.append(monster_data)
             
         return wiki_data
@@ -64,6 +62,13 @@ class MHWikiScraper(AbstractWebScraper[MHWikiItem]):
         row_habitats = size_table.find("th", string=re.compile("Habitats")).find_parent("tr").find_next_sibling("tr")
         print(row_habitats)
         monster_info["habitats"] = [h.text.strip() for h in row_habitats.find_all("a")]
+
+        label_header = soup.find("h3", string="Categories")
+        label_table = label_header.find_next_sibling("div", class_="mw-portlet-body")
+        labels = [label.text for label in label_table.find_all("li")]
+        print(labels)
+        for label in ["Flagship Monsters", "Subspecies", "Variants", "Final Boss Monsters", "Monsters with Themes"]:
+            monster_info[label] = label in labels
 
         return MHWikiItem(*monster_info.values())
 

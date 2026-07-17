@@ -16,13 +16,14 @@ logging.basicConfig(
 if __name__ == "__main__":
     ranking_scraper = RankingScraper()
     wiki_scraper = MHWikiScraper()
+    csv_repository = LocalCsvRepository(file_path=Path(r"C:\Users\Moritz\Desktop\mh_project\data"))
 
     wiki_soup = wiki_scraper.retrieve_soup()
     monster_links = wiki_scraper.get_monster_links(wiki_soup)
 
-    example_entry = monster_links[2]
+    example_entry = monster_links[1:10]
     print(example_entry)
 
-    example_soup = wiki_scraper.retrieve_soup(url=example_entry)
-    example_info = wiki_scraper.get_monster_info(soup=example_soup)
-    print(example_info)
+    example_info = wiki_scraper.scrape()
+    
+    csv_repository.save(example_info)

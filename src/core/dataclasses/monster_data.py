@@ -58,3 +58,5 @@ class MHWikiItem:
     is_flagship: Optional[bool] = False
     is_subspecies: Optional[bool] = False
     is_variant: Optional[bool] = False
+    is_final_boss: Optional[bool] = False
+    has_theme: Optional[bool] = False
