@@ -1,5 +1,6 @@
 import logging
 import re
+import beepy
 
 from bs4 import BeautifulSoup
 from pathlib import Path
@@ -21,68 +22,77 @@ class MHWikiScraper(AbstractWebScraper[MHWikiItem]):
         self.monsters_to_scrape = monsters_to_scrape
 
     def scrape(self) -> List[MHWikiItem]:
-        wiki_data = []
-        
         soup = self.retrieve_soup()
-
         scraping_monsters = self.monsters_to_scrape if self.monsters_to_scrape else self.get_monster_links(soup)
 
-        for monster_link in scraping_monsters:
-            monster_page = self.retrieve_soup(monster_link)
-            monster_data = self.get_monster_info(monster_page)
-            wiki_data.append(monster_data)
+        logger.info("Start scraping from MH Wiki.")
+
+        wiki_data = []
+        try:
+            for relative_link in scraping_monsters:
+                monster_data = self.get_monster_info(relative_link)
+                wiki_data.append(monster_data)
             
-        return wiki_data
+            logger.info(f"MH Wiki successfully scraped! {len(wiki_data)} entries collected.")
+            return wiki_data
+            
+        except KeyboardInterrupt:
+            logger.warning(f"Manually interrupted with keybord interrupt!")
+            return wiki_data
 
-    def get_monster_info(self, soup: BeautifulSoup) -> MHWikiItem:
-        info_table = soup.find("table", class_ = "wikitable monster-game-info")
+    def get_monster_info(self, link: str) -> MHWikiItem:
+        soup = self.retrieve_soup(f"https://monsterhunterwiki.org/{link}")
 
+        name_from_link = link.split("/")[-1]
         monster_info = {}
 
-        monster_info["monster_name"] = info_table.find("span", class_ = "custom-gallery").get("data-monster").strip()
-        
-        for attribute in ["Original", "Latest", "Classification"]:
-            row = info_table.find("th", string=re.compile(attribute)).find_parent("tr")
-            monster_info[attribute.lower()] = row.find("td").text.strip()
+        try:
+            info_table = soup.find("table", class_ = "wikitable monster-game-info")
 
-        for attribute in ["Elements", "Status Effects", "Weakest To"]:
-            row = info_table.find("th", string=re.compile(attribute)).find_parent("tr")
-            containers = row.find_all("span", typeof="mw:File")
-            monster_info[attribute.lower()] = [c.find("a").get("title").strip() for c in containers]
+            monster_info["monster_name"] = info_table.find("span", class_ = "custom-gallery").get("data-monster").strip()
+            
+            for attribute in ["Original", "Latest", "Classification"]:
+                row = info_table.find("th", string=re.compile(attribute)).find_parent("tr")
+                monster_info[attribute.lower()] = row.find("td").text.strip()
 
-        size_table = soup.find("table", class_="wikitable", align="right", style="margin: 0rem 0rem 1rem 1rem; max-width:450px; clear:both;")
-        print(size_table)
+            for attribute in ["Elements", "Status Effects", "Weakest To"]:
+                row = info_table.find("th", string=re.compile(attribute)).find_parent("tr")
+                containers = row.find_all("span", typeof="mw:File")
+                monster_info[attribute.lower()] = [c.find("a").get("title").strip() for c in containers]
 
-        size_dimensions = []
-        for attribute in ["Length", "Height", "Foot Size"]:
-            row = size_table.find("th", string=re.compile(attribute)).find_parent("tr")
-            size_dimensions.append(row.find("td").text)
-        monster_info["size"] = size_dimensions
+            size_table = soup.find("table", class_="wikitable", align="right", style="margin: 0rem 0rem 1rem 1rem; max-width:450px; clear:both;")
 
-        row_habitats = size_table.find("th", string=re.compile("Habitats")).find_parent("tr").find_next_sibling("tr")
-        print(row_habitats)
-        monster_info["habitats"] = [h.text.strip() for h in row_habitats.find_all("a")]
+            size_dimensions = []
+            for attribute in ["Length", "Height", "Foot Size"]:
+                row = size_table.find("th", string=re.compile(attribute)).find_parent("tr")
+                size_dimensions.append(row.find("td").text)
+            monster_info["size"] = size_dimensions
 
-        label_header = soup.find("h3", string="Categories")
-        label_table = label_header.find_next_sibling("div", class_="mw-portlet-body")
-        labels = [label.text for label in label_table.find_all("li")]
-        print(labels)
-        for label in ["Flagship Monsters", "Subspecies", "Variants", "Final Boss Monsters", "Monsters with Themes"]:
-            monster_info[label] = label in labels
+            row_habitats = size_table.find("th", string=re.compile("Habitats")).find_parent("tr").find_next_sibling("tr")
+            monster_info["habitats"] = [h.text.strip() for h in row_habitats.find_all("a")]
 
-        return MHWikiItem(*monster_info.values())
+            label_header = soup.find("h3", string="Categories")
+            label_table = label_header.find_next_sibling("div", class_="mw-portlet-body")
+            labels = [label.text for label in label_table.find_all("li")]
+            for label in ["Flagship Monsters", "Subspecies", "Variants", "Deviants", "Rare Species", "Collaboration Monsters", "Final Boss Monsters", "Monsters with Themes"]:
+                monster_info[label] = label in labels
+            
+            logger.info(f"Data successfully scraped for {name_from_link}")
+            return MHWikiItem(*monster_info.values())
+
+        except AttributeError as e:
+            logger.warning(f"Attribute not found: {e}. Article suspected as category headline: {name_from_link}")
 
     def get_monster_links(self, soup: BeautifulSoup) -> List[str]:
-        logger.info("Extracting Monster Links from soup...")
+        logger.info("Extracting Monster Links from MH Wiki...")
         
-        base_url = "https://monsterhunterwiki.org"
         start_headline = soup.find("span", class_="mw-headline", id="Large_Monsters")
 
         if not start_headline:
             logger.warning("Start headline not found!")
             return []
         
-        logger.info(f"Start headline found: {start_headline}")
+        logger.debug(f"Start headline found: {start_headline}")
 
         start_h2 = start_headline.find_parent("h2")
         scrape_range = []
@@ -98,11 +108,10 @@ class MHWikiScraper(AbstractWebScraper[MHWikiItem]):
         for el in scrape_range:
             a_tag = el.find("a", href=pattern)
             relative_link = a_tag["href"]
-            full_link = f"{base_url}{relative_link}"
             
-            if full_link not in monster_urls:
-                monster_urls.append(full_link)
+            if relative_link not in monster_urls:
+                monster_urls.append(relative_link)
 
-        logger.info(f"Monster urls extracted! {len(monster_urls)} elements found.")
+        logger.debug(f"Monster urls extracted! {len(monster_urls)} elements found.")
     
         return monster_urls

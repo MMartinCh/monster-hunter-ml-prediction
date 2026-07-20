@@ -4,7 +4,7 @@ from typing import List, Optional
 @dataclass(frozen=True) 
 class MonsterData:
     """Domain model representing a single monster's raw and engineered traits."""
-    monster_name: str
+    monster_name: Optional[str] = None
 
     # Meta data
     first_appearance: Optional[str] = None
@@ -17,6 +17,9 @@ class MonsterData:
     is_flagship: Optional[bool] = False
     is_subspecies: Optional[bool] = False
     is_variant: Optional[bool] = False
+    is_deviant: Optional[bool] = False
+    is_rare_species: Optional[bool] = False
+    is_collaboration: Optional[bool] = False
 
     # Gameplay data
     difficulty: Optional[str] = None
@@ -58,5 +61,16 @@ class MHWikiItem:
     is_flagship: Optional[bool] = False
     is_subspecies: Optional[bool] = False
     is_variant: Optional[bool] = False
+    is_deviant: Optional[bool] = False
+    is_rare_species: Optional[bool] = False
+    is_collaboration: Optional[bool] = False
     is_final_boss: Optional[bool] = False
     has_theme: Optional[bool] = False
+
+@dataclass
+class WikiQuestItem:
+    """DTO retrieved from MH Wiki Quest overview pages."""
+    monster_name: str
+
+    total_game_appearance: Optional[int] = 0
+    total_quest_appearances: Optional[int] = 0

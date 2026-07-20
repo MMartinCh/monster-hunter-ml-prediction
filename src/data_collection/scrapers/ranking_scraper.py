@@ -17,7 +17,7 @@ class RankingScraper(AbstractWebScraper[RankingScraperItem]):
         self.headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
 
     def scrape(self):
-        logger.info("RankingScraper - initiate scraping...")
+        logger.info("Start scraping Official Capcom Fan Ranking.")
 
         monster_rankings = []
 
@@ -31,10 +31,7 @@ class RankingScraper(AbstractWebScraper[RankingScraperItem]):
         return monster_rankings
     
     def get_top_3(self) -> List[RankingScraperItem]:
-        logger.info("Fetch Top 3...")
-
         top_3 = []
-
         top_3_data = [
             {"monster_name": "Zinogre", "rank": 1},
             {"monster_name": "Nergigante", "rank": 2},
@@ -49,8 +46,6 @@ class RankingScraper(AbstractWebScraper[RankingScraperItem]):
         return top_3
     
     def get_4_to_228(self, soup: BeautifulSoup) -> List[RankingScraperItem]:
-        logger.info("Scrape ranks 4 to 229...")
-
         top_4_to_bottom = []
 
         ranking = soup.find('div', class_ = 'ranking')
