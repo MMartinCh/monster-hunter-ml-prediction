@@ -31,7 +31,8 @@ class MHWikiScraper(AbstractWebScraper[MHWikiItem]):
         try:
             for relative_link in scraping_monsters:
                 monster_data = self.get_monster_info(relative_link)
-                wiki_data.append(monster_data)
+                if monster_data is not None:
+                    wiki_data.append(monster_data)
             
             logger.info(f"MH Wiki successfully scraped! {len(wiki_data)} entries collected.")
             return wiki_data
@@ -78,7 +79,26 @@ class MHWikiScraper(AbstractWebScraper[MHWikiItem]):
                 monster_info[label] = label in labels
             
             logger.info(f"Data successfully scraped for {name_from_link}")
-            return MHWikiItem(*monster_info.values())
+            
+            return MHWikiItem(
+                monster_name=monster_info.get("monster_name"),
+                first_appearance=monster_info.get("original"),
+                latest_appearance=monster_info.get("latest"),
+                classification=monster_info.get("classification"),
+                elements=monster_info.get("elements", []),
+                ailments=monster_info.get("status effects", []),
+                weaknesses=monster_info.get("weakest to", []),
+                size=monster_info["size"],
+                habitats=monster_info.get("habitats", []),
+                is_flagship=monster_info.get("Flagship Monsters", False),
+                is_subspecies=monster_info.get("Subspecies", False),
+                is_variant=monster_info.get("Variants", False),
+                is_deviant=monster_info.get("Deviants", False),
+                is_rare_species=monster_info.get("Rare Species", False),
+                is_collaboration=monster_info.get("Collaboration Monsters", False),
+                is_final_boss=monster_info.get("Final Boss Monsters", False),
+                has_theme=monster_info.get("Monsters with Themes", False)
+            )
 
         except AttributeError as e:
             logger.warning(f"Attribute not found: {e}. Article suspected as category headline: {name_from_link}")

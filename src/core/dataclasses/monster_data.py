@@ -72,5 +72,15 @@ class WikiQuestItem:
     """DTO retrieved from MH Wiki Quest overview pages."""
     monster_name: str
 
-    total_game_appearance: Optional[int] = 0
+    total_game_appearances: Optional[int] = 0
     total_quest_appearances: Optional[int] = 0
+    
+    has_assignment: Optional[bool] = False
+
+    lr_quest: Optional[int] = None
+    hr_quest: Optional[int] = None
+    mr_quest: Optional[int] = None
+
+    lr_hp: Optional[int] = None
+    hr_hp: Optional[int] = None
+    mr_hp: Optional[int] = None

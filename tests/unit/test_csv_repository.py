@@ -1,22 +1,24 @@
 import pathlib
 import pytest
 from src.core.dataclasses.monster_data import MonsterData
-from src.data.repositories.csv_repository import LocalCsvRepository
+from src.data_collection.repositories.csv_repository import LocalCsvRepository
 
 def test_csv_repository_save_and_load(tmp_path):
     """Test that data can be serialized to CSV and deserialized accurately."""
-    # Arrange: Setup a temporary path and sample data using pytest's tmp_path fixture
-    test_file = tmp_path / "test_monsters.csv"
-    repository = LocalCsvRepository(file_path=test_file)
+    
+    test_path = tmp_path
+    test_file = "test_monsters.csv"
+
+    repository = LocalCsvRepository(data_path=test_path, default_file_name=test_file)
     
     sample_monsters = [
         MonsterData(
-            name="Rathalos", 
-            species="Flying Wyvern", 
-            generation=1, 
+            monster_name="Rathalos", 
+            classification="Flying Wyvern", 
+            first_appearance="Monster Hunter", 
             is_flagship=True, 
             elements=["Fire"], 
-            anniversary_rank=21
+            rank=21
         )
     ]
 
@@ -26,7 +28,7 @@ def test_csv_repository_save_and_load(tmp_path):
 
     # Assert: Verify the data matches perfectly
     assert len(loaded_monsters) == 1
-    assert loaded_monsters[0].name == "Rathalos"
+    assert loaded_monsters[0].monster_name == "Rathalos"
     assert loaded_monsters[0].is_flagship is True
     assert "Fire" in loaded_monsters[0].elements
-    assert loaded_monsters[0].anniversary_rank == 21
+    assert loaded_monsters[0].rank == 21

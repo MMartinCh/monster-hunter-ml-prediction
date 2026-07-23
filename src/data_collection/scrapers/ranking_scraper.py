@@ -59,7 +59,7 @@ class RankingScraper(AbstractWebScraper[RankingScraperItem]):
 
             try:
                 name = name_div.text.strip()
-                rank = rank_div.text.split('.')[-1]
+                rank = int(rank_div.text.split('.')[-1].strip())
 
                 rank_dict = {"monster_name": name, "rank": rank}
                 rank_dict = RankingScraperItem(**rank_dict)

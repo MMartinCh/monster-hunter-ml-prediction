@@ -5,7 +5,7 @@ import sys
 import pandas as pd
 
 from pathlib import Path
-from typing import List
+from typing import List, get_type_hints
 
 from src.core.interfaces import AbstractMonsterRepository
 from src.core.dataclasses import MonsterData
@@ -50,19 +50,62 @@ class LocalCsvRepository(AbstractMonsterRepository):
 
         logger.info(f"Data successfully saved to: {file_path}!")
 
-    def load(self, file_name: str = None) -> [dict]:
+    def load(self, file_name: str = None) -> List[MonsterData]:
         file_name = self.default_file_name if file_name is None else file_name
         file_path = self.DATA_PATH / file_name
 
         logger.info(f"Loading data: {file_path}")
 
-        data = []
+        monsters = []
+        if not file_path.exists():
+            return monsters
+
+        type_hints = get_type_hints(MonsterData)
+
         with open(file_path, mode="r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             
             for row in reader:
-                data.append({
-                    key: val for key, val in row.items()
-                })
+                monster_kwargs = {}
+                
+                for field_name, expected_type in type_hints.items():
+                    val = row.get(field_name)
+                    
+                    if val is None or val == "":
+                        if "bool" in str(expected_type):
+                            monster_kwargs[field_name] = False
+                        elif "list" in str(expected_type).lower():
+                            monster_kwargs[field_name] = []
+                        else:
+                            monster_kwargs[field_name] = None
+                        continue
 
-        return data
+                    type_str = str(expected_type).lower()
+                    
+                    if "list" in type_str:
+                        clean_items = [item.strip() for item in val.split(",") if item.strip()]
+                        if "int" in type_str:
+                            monster_kwargs[field_name] = [int(i) for i in clean_items if i.isdigit()]
+                        elif "float" in type_str:
+                            monster_kwargs[field_name] = [float(i) for i in clean_items]
+                        else:
+                            monster_kwargs[field_name] = clean_items
+                            
+                    elif "bool" in type_str:
+                        monster_kwargs[field_name] = val.lower() in ("true", "1", "yes")
+                        
+                    elif "int" in type_str:
+                        monster_kwargs[field_name] = int(val) if val.isdigit() else None
+                        
+                    elif "float" in type_str:
+                        try:
+                            monster_kwargs[field_name] = float(val)
+                        except ValueError:
+                            monster_kwargs[field_name] = None
+                            
+                    else:
+                        monster_kwargs[field_name] = val
+
+                monsters.append(MonsterData(**monster_kwargs))
+
+        return monsters
