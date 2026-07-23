@@ -68,7 +68,7 @@ class MHWikiItem:
     has_theme: Optional[bool] = False
 
 @dataclass
-class WikiQuestItem:
+class QuestItem:
     """DTO retrieved from MH Wiki Quest overview pages."""
     monster_name: str
 
@@ -76,11 +76,12 @@ class WikiQuestItem:
     total_quest_appearances: Optional[int] = 0
     
     has_assignment: Optional[bool] = False
-
-    lr_quest: Optional[int] = None
-    hr_quest: Optional[int] = None
-    mr_quest: Optional[int] = None
+    initial_quest: Optional[int] = None
 
     lr_hp: Optional[int] = None
     hr_hp: Optional[int] = None
     mr_hp: Optional[int] = None
+
+    lr_reward: Optional[int] = None
+    hr_reward: Optional[int] = None
+    mr_reward: Optional[int] = None
