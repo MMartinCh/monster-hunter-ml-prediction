@@ -3,7 +3,8 @@ import sys
 
 from pathlib import Path
 
-from src.data_collection.scrapers import MHWikiScraper, RankingScraper, QuestScraper
+from src.data_collection.scrapers.partial import RiseQuestScraper # type: ignore
+from src.data_collection.scrapers import MHWikiScraper, RankingScraper, CompleteQuestScraper
 from src.data_collection.scrapers.ranking_scraper import RankingScraper
 from src.data_collection.repositories import DataMerger, LocalCsvRepository
 
@@ -26,7 +27,7 @@ if __name__ == "__main__":
     merger = DataMerger()
     ranking_scraper = RankingScraper()
     wiki_scraper = MHWikiScraper()
-    quest_scraper = QuestScraper()
+    #quest_scraper = CompleteQuestScraper()
 
     # Get Data: Scraping or Loading
     match MODE:
@@ -44,7 +45,11 @@ if __name__ == "__main__":
             wiki_data = repository.load("wiki_data.csv")
 
         case "TEST":
-            test_data = quest_scraper.scrape_rise_base_hp()
+            test_rise_quest_scraper = RiseQuestScraper()
+            test_data = test_rise_quest_scraper.scrape()
+            print("Test Results")
+            print("="*30)
+            print(test_data)
 
     # Merge data
     #merged_data = merger.merge(ranking_data, wiki_data)

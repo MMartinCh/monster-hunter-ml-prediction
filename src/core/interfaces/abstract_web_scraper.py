@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 class AbstractWebScraper[T](ABC):
     """Abstract base class for all web based scrapers"""
     
+    
     def __init__(self, 
                  url: Optional[str] = None, 
                  headers: Optional[dict] = None
