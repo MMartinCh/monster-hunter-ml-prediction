@@ -1,3 +1,3 @@
-from .monster_data import MonsterData, MHWikiItem, RankingScraperItem, WikiQuestItem
+from .monster_data import MonsterData, MHWikiItem, RankingScraperItem, QuestItem
 
-__all__ = ["MonsterData", "MHWikiItem", "RankingScraperItem", "WikiQuestItem"]
+__all__ = ["MonsterData", "MHWikiItem", "RankingScraperItem", "QuestItem"]

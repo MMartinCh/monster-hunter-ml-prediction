@@ -1,11 +1,10 @@
-from abc import ABC, abstractmethod
-from bs4 import BeautifulSoup
-from random import randint
-from time import sleep
-from typing import List, Optional
- 
 import logging
 import requests
+from abc import ABC, abstractmethod
+from time import sleep
+from typing import List, Optional
+
+from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +32,7 @@ class AbstractWebScraper[T](ABC):
         if url is None:
             url = self.url
 
-        sleep(randint(1,2))
+        sleep(1.0)
 
         try:
             logger.info(f"Retrieving soup from: {url}")

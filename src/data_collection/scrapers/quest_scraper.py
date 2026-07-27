@@ -1,0 +1,254 @@
+import logging
+import re
+from pathlib import Path
+from typing import Any, Dict, List
+from urllib.parse import urljoin
+
+from bs4 import BeautifulSoup
+import numpy as np
+import pandas as pd
+
+from src.core.dataclasses import QuestItem
+from src.core.interfaces import AbstractWebScraper
+
+logger = logging.getLogger(__name__)
+
+
+class QuestScraper(AbstractWebScraper[QuestItem]):
+    """Scraper class to scrape quest info from Kiranico and Fextralife pages for different MH games from Wilds to Tri Ultimate."""
+
+    # TODO: Add column to db, from where the monster was scraped.
+    def scrape(self) -> List[QuestItem]:
+        """Scrape quests from Monster Hunter main line games in order of sales: World -> Rise -> Wilds... 
+        Keep first entry for in-game data only. Sum up meta-data.
+        """
+        world_data = self.scrape_world()
+        rise_data = self.scrape_rise()
+        wilds_data = self.scrape_wilds()
+
+    # Functions to get quest data for MH World/ Iceborne
+    def scrape_world(self) -> List[QuestItem]:
+        """Loads quest data from @gatheringhallstudios' quest databases and Fextralife (for base hp) 
+        and extracts information as QuestItems.
+        """
+        worlds_quest_data = []
+
+        df_quests = self.load_world_quest_data()
+        world_monsters = df_quests["monster_name"].unique().tolist()
+
+        for monster in world_monsters:
+            monster_data = {}
+            df_monster = df_quests[df_quests["monster_name"] == monster]
+
+            monster_data["monster_name"] = monster
+            monster_data["game_appearances"] = 1
+            monster_data["quest_appearances"] = df_monster["quantity"].sum()
+            monster_data["has_assignment"] = "assigned" in df_monster["category"].tolist()
+            monster_data["initial_quest"] = df_monster["stars"].min()
+
+            for rank in ["lr", "hr", "mr"]:
+                monster_data[f"{rank}_reward"] = df_monster.loc[df_monster["rank"] == rank, "zenny"].mean()
+                monster_data[f"{rank}_hp"] = df_monster.loc[df_monster["rank"] == rank, "hp"].mean()
+
+            worlds_quest_data.append(self.convert_to_quest_item(monster_data))
+
+        return worlds_quest_data
+
+    def load_world_quest_data(self, overwrite: bool = False, scrape_hp: bool = False) -> pd.DataFrame:
+        """Merges baseline database files for Monster Hunter World, transforms it into suitable format and loads it as DataFrame.
+        Optionally scrapes Monster hp from fextralife (through helper function scrape_world_monster_hp).
+        """
+        database_path = Path(__file__).resolve().parents[3] / "data" / "subsets" / "gatheringhallstudios"
+        merged_filename = database_path / "mhw_quests_merged.csv"
+
+        if not merged_filename.is_file() or overwrite:
+            base_filename = database_path / "world_quest_base.csv"
+            monsters_filename = database_path / "world_quest_monsters.csv"
+
+            df_base = pd.read_csv(base_filename, index_col=False)
+            df_monsters = pd.read_csv(monsters_filename, index_col=False).rename(columns={"base_id": "id"})
+            df_merged = pd.merge(df_monsters, df_base, how="outer", on="id")
+
+            small_monsters = ['Jagras', 'Kestodon', 'Gajau', 'Vespoid', 'Hornetaur', 'Raphinos', 'Gastodon',
+                              'Girros', 'Barnos', 'Gajalaka', 'Wulg', 'Boaboa', 'Mosswine', 'Shamos']
+            df_objective_filtered = df_merged[df_merged["is_objective"] == True]
+            df_large_filtered = df_objective_filtered[~df_objective_filtered["monster_en"].isin(small_monsters)]
+
+            df_large_filtered.rename(columns={"monster_en":"monster_name"}, inplace=True)
+            df_large_filtered["rank"] = df_large_filtered["rank"].str.lower()
+            df_large_filtered.loc[df_large_filtered['rank'] == 'mr', 'stars'] += 9
+
+            df_complete = df_large_filtered.sort_values(by=["monster_name", "id"]).reset_index(drop=True)
+
+            if scrape_hp or not "hp" in df_large_filtered.columns:
+                world_monsters = df_large_filtered["monster_name"].unique().tolist()
+                df_hp = self.scrape_world_monster_hp(world_monsters)
+
+                df_complete = pd.merge(df_complete, df_hp, on=["monster_name", "rank"], how="left")
+
+            df_complete.to_csv(merged_filename, index=False)
+
+        return pd.read_csv(merged_filename, index_col=False)
+
+    def scrape_world_monster_hp(self, monsters: List[str]) -> pd.DataFrame:
+        fextralife_url = r"https://monsterhunterworld.wiki.fextralife.com"
+        world_monster_hp = []
+        rank_mapping = {"Low Rank":"lr", "High Rank":"hr", "Master Rank":"mr", "HP":"mr", "Health":"mr"}
+
+        for monster in monsters:
+            try:
+                relative_link = monster.strip().replace(" ","+")
+                absolute_link = f"{fextralife_url}/{relative_link}"
+
+                soup = self.retrieve_soup(absolute_link)
+                hp_cell = soup.find(lambda tag: tag.name == "li" and "HP" in tag.text)
+
+                has_sublist = hp_cell.find("ul")
+
+                if has_sublist:
+                    hp_li = [hp.text.strip() for hp in has_sublist.find_all("li") if hp.text.strip()]
+                else:
+                    hp_li = [hp_cell.text.strip()]
+
+                for li in hp_li:
+                    if ":" not in li:
+                        continue
+                    rank, hp_row = li.split(":", 1)
+                    match = re.search(r"([\d,]+)\s*\(solo\)", hp_row.lower())
+                    hp = int(match.group(1).replace(",", "")) if match else None
+
+                    world_monster_hp.append({
+                        "monster_name": monster,
+                        "rank": rank_mapping.get(rank.strip(), "mr"),
+                        "hp": hp
+                        })
+
+            except AttributeError:
+                logger.warning(f"No Hp found for {absolute_link}!")
+
+        df_world_hp = pd.DataFrame(world_monster_hp)
+        df_world_hp.to_csv(r"C:\Users\Martin\Desktop\monster-hunter-ml-prediction\data\test_hp.csv", index=False)
+
+        return df_world_hp
+
+    # Functions to scrape MH Rise/ Sunbreak
+    def scrape_rise(self):
+        pass
+
+    def scrape_rise_base_hp(self) -> List[dict]:
+
+        # TODO: Check current monsters in db, only scrape new entries
+        rise_monster_url = r"https://mhrise.mhrice.info/monster.html"
+        overview_soup = self.retrieve_soup(rise_monster_url)
+        rise_base_hps = []
+
+        monster_table = overview_soup.find("ul", class_="mh-list-monster")
+        monster_links = [urljoin(rise_monster_url, a["href"]) for a in monster_table.find_all("a", href=True) if a["href"]]
+        print(len(monster_links))
+
+        for link in monster_links:
+            try:
+                monster_soup = self.retrieve_soup(link)
+                monster_name = monster_element = monster_soup.select_one('span.lang-default.mh-lang[lang="en"]').get_text(strip=True)
+
+                base_hp_column = monster_soup.find("span", string=re.compile("Base HP"))
+                base_hp_info = base_hp_column.find_next_sibling("span").text.strip()
+                base_hp = int(base_hp_info.split(")")[-1])
+
+                print(f"{monster_name}: {base_hp}")
+
+                rise_base_hps.append({
+                    "monster_name": monster_name,
+                    "base_hp": base_hp or None,
+                })
+
+            except Exception as e:
+                logger.warning(f"Failure for extracting {link}: {e}")
+
+        return rise_base_hps
+
+    # Functions to scrape MH Wilds
+    def scrape_wilds(self) -> List[QuestItem]:
+        """Scrapes quest and monster data from the Monster Hunter Wilds Kiranico database."""
+        wilds_url = r"https://mhwilds.kiranico.com/data/quests"
+        wilds_data = []
+
+        soup = self.retrieve_soup(wilds_url)
+        table = soup.find("table", class_="w-full caption-bottom text-sm")
+        quest_rows = table.find_all("tr")
+
+        unique_monsters = set()
+        for row in quest_rows:
+            for link in row.find_all("a", href=re.compile(r"/data/monsters/")):
+                unique_monsters.add(link.text.strip())
+
+        # Collect all quest data mapped to monsters
+        all_quests_for_monsters = {monster_name: [] for monster_name in unique_monsters}
+        
+        for row in quest_rows:
+            quest_data = {}
+            cells = row.find_all("td")
+
+            quest_data["title"] = cells[0].text.strip()
+            quest_data["reward"] = int(cells[1].text.strip().replace(",", "").replace("HRP", ""))
+
+            monsters_in_quest = [link.text.strip() for link in cells[2].find_all("a") if link.text.strip()]
+            primary_monster = monsters_in_quest[0] if monsters_in_quest else None
+
+            monster_hp_divs = [div.text.strip() for div in cells[3].find_all("div") if div.text.strip()]
+            quest_data["monster_hp"] = int(monster_hp_divs[0].replace(",", "").replace("HP", "")) if monster_hp_divs else None
+
+            quest_data["level"] = int(re.search(r"\d★", quest_data.get("title")).group().replace("★", ""))
+            quest_data["is_assignment"] = "Assignment" in quest_data.get("title")
+
+            match quest_data.get("level"):
+                case level if level <= 3:
+                    quest_data["rank"] = "Low"
+                case level if level <= 6:
+                    quest_data["rank"] = "High"
+                case level if level > 6:
+                    quest_data["rank"] = "Master"
+                case _:
+                    quest_data["rank"] = "Unknown"
+
+            if primary_monster is not None:
+                all_quests_for_monsters[primary_monster].append(quest_data)
+
+        # Process statistics per monster
+        for monster, quests in all_quests_for_monsters.items():
+            monster_data = {
+                "monster_name": monster,
+                "game_appearances": 1,
+                "quest_appearances": len(quests),
+                "has_assignment": any(q["is_assignment"] for q in quests),
+                "initial_quest": min(q["level"] for q in quests)
+            }
+
+            rank_mapping = {"lr": "Low", "hr": "High", "mr": "Master"}
+            for rank_prefix, rank_name in rank_mapping.items():
+                monster_data[f"{rank_prefix}_hp"] = np.mean(
+                    [q["monster_hp"] for q in quests if q["rank"] == rank_name]
+                )
+                monster_data[f"{rank_prefix}_reward"] = np.mean(
+                    [q["reward"] for q in quests if q["rank"] == rank_name]
+                )
+
+            wilds_data.append(self.convert_to_quest_item(monster_data))
+        
+        return wilds_data
+
+    def convert_to_quest_item(self, data: dict) -> QuestItem:
+        """Helper to map processed dictionary data to a structured QuestItem dataclass."""
+        return QuestItem(
+            monster_name=data.get("monster_name"),
+            total_game_appearances=data.get("game_appearances", 0),
+            total_quest_appearances=data.get("quest_appearances", 0),    
+            has_assignment=data.get("has_assignment", False),
+            initial_quest=data.get("initial_quest"),
+            lr_hp=data.get("lr_hp"),
+            hr_hp=data.get("hr_hp"),               
+            mr_hp=data.get("mr_hp"),
+            lr_reward=data.get("lr_reward"),
+            hr_reward=data.get("hr_reward"),               
+            mr_reward=data.get("mr_reward")
+        )
