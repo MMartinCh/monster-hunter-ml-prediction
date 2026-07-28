@@ -15,12 +15,28 @@ class RiseQuestScraper(AbstractWebScraper[QuestItem]):
     """Partial Scraper Class that scrapes quest data for MH Rise/ Sunbreak.
     To be called via QuestScraper class.
     """
-
     BASE_URL = r"https://mhrise.mhrice.info/monster.html"
-    
+    KEY_QUEST_URL = r"https://monsterhunterrise.wiki.fextralife.com/Hub+Quests"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._key_quests: List[str] | None = None
+
+    @property
+    def key_quests(self) -> List[str]:
+        if self._key_quests is None:
+            self._key_quests = self._scrape_key_quests()
+        return self._key_quests
+
+    def _scrape_key_quests(self) -> List[str]:
+        """Scrape all key quests from Fextralife Wiki, if not previously initiated."""
+        soup = self.retrieve_soup(self.KEY_QUEST_URL)
+        key_quest_tags = soup.select("p:has(img[title='key_quests_mhrise_wiki_guide_50px']) a")
+        return [a.text.strip() for a in key_quest_tags if a.text.strip()]
+
+    # main scraping section
     def scrape(self) -> List[QuestItem]:
         """ Get all quest info from mhrise.info."""
-        
         rise_quest_info = []
 
         overview_soup = self.retrieve_soup(self.BASE_URL)
@@ -31,7 +47,7 @@ class RiseQuestScraper(AbstractWebScraper[QuestItem]):
             try:
                 monster_soup = self.retrieve_soup(link)
                 monster_name = monster_soup.select_one('span.lang-default.mh-lang[lang="en"]').get_text(strip=True)
-                monster_base_hps = self.get_monster_page_info(monster_soup)
+                #monster_base_hps = self.get_monster_page_info(monster_soup)
                 monster_quests = self.get_quests_for_monster(monster_soup)
 
             except KeyboardInterrupt:
@@ -65,9 +81,22 @@ class RiseQuestScraper(AbstractWebScraper[QuestItem]):
             }
 
     def get_quests_for_monster(self, soup: BeautifulSoup) -> List[Dict[str, Any]]:
+        monster_quest_data = []
+
         quest_section = soup.find("section", id="s-quest")
         quest_rows = quest_section.select("tr:not(.mh-non-target):not(.mh-hidden) a[href^='quest/']")
-        quest_links = [quest["href"] for quest in quest_rows if quest.has_attr("href")]
+        quest_links = [urljoin(self.BASE_URL, a["href"]) for a in quest_rows if a.has_attr("href")]
 
         for link in quest_links:
+            quest_data = {}
+            quest_soup = self.retrieve_soup(link)
+
+            quest_data["name"] = quest_soup.select_one("span.lang-default.mh-lang[lang='en'] span").text.strip()
+            quest_data["is_assigned"] = quest_data["name"] in self.key_quests
+
             # TODO: scrape data from quest page - reward, hp,
+
+            print(quest_data)
+            monster_quest_data.append(quest_data)
+
+        return monster_quest_data
