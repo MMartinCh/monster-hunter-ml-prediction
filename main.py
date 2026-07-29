@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
         case "TEST":
             test_rise_quest_scraper = RiseQuestScraper()
-            test_data = test_rise_quest_scraper.scrape()
+            test_data = test_rise_quest_scraper.key_quests
             print("Test Results")
             print("="*30)
             print(test_data)
