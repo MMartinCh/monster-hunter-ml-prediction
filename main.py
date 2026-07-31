@@ -10,7 +10,7 @@ from src.data_collection.repositories import DataMerger, LocalCsvRepository
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    format="[%(levelname)s] %(name)s: %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 
@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
         case "TEST":
             test_rise_quest_scraper = RiseQuestScraper()
-            test_data = test_rise_quest_scraper.key_quests
+            test_data = test_rise_quest_scraper.quest_data
             print("Test Results")
             print("="*30)
             print(test_data)
