@@ -1,36 +1,36 @@
 import logging
 import re
-import beepy
+from functools import cached_property
 
 from bs4 import BeautifulSoup
 from pathlib import Path
 from typing import List, Optional
 from urllib.parse import urljoin
 
-from src.core.dataclasses import MHWikiItem
-from src.core.interfaces import AbstractWebScraper
+from src.core.dataclasses import MHWikiItem #type:ignore
+from src.core.interfaces import AbstractWebScraper #type:ignore
+from src.core.helpers import file_cache #type:ignore
 
 logger = logging.getLogger(__name__)
 
 class MHWikiScraper(AbstractWebScraper[MHWikiItem]):
-    def __init__(self, 
-                 monsters_to_scrape: Optional[List[str]] = None, 
-                 url: str = r"https://monsterhunterwiki.org/wiki/Monster_List"
-                 ):
-        
-        super().__init__(url = url)
-        self.monsters_to_scrape = monsters_to_scrape
+    WIKI_URL = r"https://monsterhunterwiki.org/wiki/Monster_List"
+    DATA_PATH = AbstractWebScraper.DATA_PATH / "subsets" / "general"
+    WIKI_MONSTER_LINKS_PATH = DATA_PATH / "helpers" / "wiki_monster_links.txt"
+
+    @cached_property
+    @file_cache("WIKI_MONSTER_LINKS_PATH")
+    def monster_links(self) -> List[str]:
+        return self.get_monster_links()
 
     def scrape(self) -> List[MHWikiItem]:
-        soup = self.retrieve_soup()
-        scraping_monsters = self.monsters_to_scrape if self.monsters_to_scrape else self.get_monster_links(soup)
-
+        """Scrape all monster data from Monster Hunter Wiki and return as list of structured data."""
         logger.info("Start scraping from MH Wiki.")
 
         wiki_data = []
         try:
-            for relative_link in scraping_monsters:
-                monster_data = self.get_monster_info(relative_link)
+            for link in self.monster_links:
+                monster_data = self._get_monster_info(link)
                 if monster_data is not None:
                     wiki_data.append(monster_data)
             
@@ -41,13 +41,13 @@ class MHWikiScraper(AbstractWebScraper[MHWikiItem]):
             logger.warning(f"Manually interrupted with keybord interrupt!")
             return wiki_data
 
-    def get_monster_info(self, link: str) -> MHWikiItem:
-        soup = self.retrieve_soup(f"https://monsterhunterwiki.org/{link}")
-
+    def _get_monster_info(self, link: str) -> MHWikiItem:
+        """Extract one MHWikiItem for Monster from individual monster page."""
+        soup = self.retrieve_soup(link)
         name_from_link = link.split("/")[-1]
-        monster_info = {}
 
         try:
+            monster_info = {}
             info_table = soup.find("table", class_ = "wikitable monster-game-info")
 
             monster_info["monster_name"] = info_table.find("span", class_ = "custom-gallery").get("data-monster").strip()
@@ -103,9 +103,9 @@ class MHWikiScraper(AbstractWebScraper[MHWikiItem]):
         except AttributeError as e:
             logger.warning(f"Attribute not found: {e}. Article suspected as category headline: {name_from_link}")
 
-    def get_monster_links(self, soup: BeautifulSoup) -> List[str]:
+    def _get_monster_links(self) -> List[str]:
         logger.info("Extracting Monster Links from MH Wiki...")
-        
+        soup = self.retrieve_soup(self.WIKI_URL)
         start_headline = soup.find("span", class_="mw-headline", id="Large_Monsters")
 
         if not start_headline:
@@ -130,7 +130,8 @@ class MHWikiScraper(AbstractWebScraper[MHWikiItem]):
             relative_link = a_tag["href"]
             
             if relative_link not in monster_urls:
-                monster_urls.append(relative_link)
+                complete_link = urljoin(self.WIKI_URL, relative_link)
+                monster_urls.append(complete_link)
 
         logger.debug(f"Monster urls extracted! {len(monster_urls)} elements found.")
     
