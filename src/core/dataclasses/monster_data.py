@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 @dataclass(frozen=True) 
 class MonsterData:
@@ -66,22 +66,3 @@ class MHWikiItem:
     is_collaboration: Optional[bool] = False
     is_final_boss: Optional[bool] = False
     has_theme: Optional[bool] = False
-
-@dataclass
-class QuestItem:
-    """DTO retrieved from MH Wiki Quest overview pages."""
-    monster_name: str
-
-    total_game_appearances: Optional[int] = 0
-    total_quest_appearances: Optional[int] = 0
-    
-    has_assignment: Optional[bool] = False
-    initial_quest: Optional[int] = None
-
-    lr_hp: Optional[int] = None
-    hr_hp: Optional[int] = None
-    mr_hp: Optional[int] = None
-
-    lr_reward: Optional[int] = None
-    hr_reward: Optional[int] = None
-    mr_reward: Optional[int] = None

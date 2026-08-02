@@ -53,13 +53,8 @@ class RiseQuestScraper(AbstractWebScraper[QuestItem]):
 
     def scrape(self) -> List[QuestItem]:
         """Get all Quest info for MH Rise/ Sunbreak and return list of structured quest data."""
-        monster_names = [""]
-
-        monster_page_data = self.monster_page_data
-        quest_data = self.quest_data
 
         # TODO: extract unique monster names, process their data and pack as QuestItem
-
         pass
         
 
@@ -121,65 +116,45 @@ class RiseQuestScraper(AbstractWebScraper[QuestItem]):
                     scraped_quests.add(quest)
 
                 try:
+                    # TODO: as function
                     quest_soup = self.retrieve_soup(quest)
 
+                    quest_id = ...
                     quest_title = quest_soup.select_one("span.lang-default.mh-lang[lang='en'] span").text.strip()
 
                     header = quest_soup.find("h1")
                     quest_category = header.find("span", class_=True).text.strip()
                     match = re.search(r"(?P<rank>[a-zA-Z]+)(?P<level>\d+)", quest_category)
-                    quest_rank, quest_level = None, None
+                    quest_rank, quest_level = "", None
                     if match:
                         quest_rank = match.group("rank").upper()
                         quest_rank = "LR" if quest_rank == "VI" else quest_rank # transform Village quests to Low Rank
                         quest_level = match.group("level")
-
                     if quest_rank == "A":
                         logger.info(f"Quest {quest_title} skipped for ANOMALY QUEST.")
                         continue
 
                     basic_info = quest_soup.find("section", id="s-basic")
-                    quest_reward = int(basic_info.find("span", string=re.compile("Reward money")).find_next_sibling("span").text.replace("z","").strip()) # HACK: use regex
+                    reward_z = int(basic_info.find("span", string=re.compile("Reward money")).find_next_sibling("span").text.replace("z","").strip()) # HACK: use regex
+                    reward_p = ...
 
-                    target_section = quest_soup.find("section", id="s-stats")
-                    target_table = target_section.find("tbody")
-
-                    targets_hp_scaling = {
-                        name_span.get_text().strip(): float(match.group(1))
-                        for row in target_table.select("tr:has(div.mh-quest-monster > span.is-primary.tag)")
-                        if (tag := row.select_one("div.mh-quest-monster > span.is-primary.tag")) and "Target" in tag.get_text()
-                        if (name_span := row.select_one("span.lang-default.mh-lang[lang='en']")) is not None
-                        if (match := next((m for td in row.find_all("td")[1:] if (m := re.search(r"x(\d+\.\d+)", td.get_text()))), None)) is not None
-                    }
-
-                    targets_with_hp = []
-                    collected_targets = []
-                    for target_monster in targets_hp_scaling.keys():
-                        try:
-                            relative_quest_rank = "lr" if quest_rank == "HR" else quest_rank.lower() #type:ignore
-
-                            base_hp = self.monster_page_data.at[target_monster, f"{relative_quest_rank}_base_hp"] #type:ignore
-                            hp_scaling = targets_hp_scaling.get(target_monster, 1)
-                            target_hp = base_hp * hp_scaling #type:ignore
-
-                            target_count = collected_targets.count(target_monster)
-                            final_name = f"{target_monster}_{target_count}" if target_count else target_monster
-
-                            collected_targets.append(target_monster)
-                            targets_with_hp.append({final_name: target_hp})
-
-                        except (KeyError, AttributeError) as e:
-                            logger.warning(f"Error when calculating TARGET HP for {e}. Default at NONE...")
+                    target_hp: Dict[str,float] = self._calculate_target_hp(quest_soup, quest_rank)
 
                     is_assigned = quest_title in self.key_quests
+                    is_event = ...
 
+                    # TODO: update fields to fit QuestItem
                     quest_info ={
+                        "id": quest_id,
                         "title": quest_title,
                         "rank": quest_rank,
                         "level": quest_level,
-                        "reward": quest_reward,
-                        "targets_with_hp": json.dumps(targets_with_hp),
-                        "is_assigned": is_assigned
+                        "reward_z": reward_z,
+                        "reward_p": reward_p, 
+                        "targets": target_hp.keys(),
+                        "targets_with_hp": json.dumps(target_hp),
+                        "is_assigned": is_assigned,
+                        "is_event": is_event
                     }
                     monster_quest_data.append(quest_info)
                     print(quest_info)
@@ -188,6 +163,40 @@ class RiseQuestScraper(AbstractWebScraper[QuestItem]):
                     logger.warning(f"Different data structure for {quest}! Skip entry...")
 
         return monster_quest_data
+
+    def _calculate_target_hp(self, quest_soup: BeautifulSoup, quest_rank: str) -> Dict[str,float]:
+        """Read target hp scaling from table, multiply with base hp and return dict of targets and their quest hp."""
+        target_section = quest_soup.find("section", id="s-stats")
+        target_table = target_section.find("tbody")
+
+        targets_hp_scaling = {
+            name_span.get_text().strip(): float(match.group(1))
+            for row in target_table.select("tr:has(div.mh-quest-monster > span.is-primary.tag)")
+            if (tag := row.select_one("div.mh-quest-monster > span.is-primary.tag")) and "Target" in tag.get_text()
+            if (name_span := row.select_one("span.lang-default.mh-lang[lang='en']")) is not None
+            if (match := next((m for td in row.find_all("td")[1:] if (m := re.search(r"x(\d+\.\d+)", td.get_text()))), None)) is not None
+        }
+
+        target_hp = {}
+        collected_targets = []
+        for target_monster in targets_hp_scaling.keys():
+            try:
+                relative_quest_rank = "lr" if quest_rank == "HR" else quest_rank.lower() #type:ignore
+
+                base_hp = self.monster_page_data.at[target_monster, f"{relative_quest_rank}_base_hp"] #type:ignore
+                hp_scaling = targets_hp_scaling.get(target_monster, 1)
+                target_hp = base_hp * hp_scaling #type:ignore
+
+                target_count = collected_targets.count(target_monster)
+                final_name = f"{target_monster}_{target_count}" if target_count else target_monster
+
+                collected_targets.append(target_monster)
+                target_hp[final_name] = target_hp
+
+            except (KeyError, AttributeError) as e:
+                logger.warning(f"Error when calculating TARGET HP for {e}. Default at NONE...")
+
+        return target_hp
 
     def _scrape_monster_links(self) -> List[str]:
         """"Find all Monster page links from Monster overview page."""
