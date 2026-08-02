@@ -27,71 +27,43 @@ class RiseQuestScraper(AbstractWebScraper[QuestItem]):
 
     DATA_PATH = AbstractWebScraper.DATA_PATH / "subsets" / "rise"
     DEFAULT_MONSTER_DATA_PATH = DATA_PATH / "monster_page_data.csv"
-    DEFAULT_QUEST_DATA_PATH = DATA_PATH / "quest_data.csv"
+    DEFAULT_QUEST_DATA_PATH = DATA_PATH / "quest_data.json"
     DEFAULT_KEY_QUEST_PATH =  DATA_PATH / "helper" / "key_quests.txt"
     DEFAULT_MONSTER_LINK_PATH = DATA_PATH / "helper"  / "monster_links.txt"
 
     @cached_property
     @file_cache("DEFAULT_MONSTER_LINK_PATH")
     def monster_links(self) -> List[str]:
-        return self.scrape_monster_links()
+        return self._scrape_monster_links()
 
     @cached_property
     @file_cache("DEFAULT_KEY_QUEST_PATH")
     def key_quests(self) -> List[str]:
-        return self.scrape_key_quests()
+        return self._scrape_key_quests()
 
     @cached_property
     @file_cache("DEFAULT_MONSTER_DATA_PATH")
-    def monster_page_data(self) -> pd.DataFrame:
+    def monster_page_data(self) -> List[Dict[str,Any]]:
         return self.scrape_monster_page_info()
 
     @cached_property
     @file_cache("DEFAULT_QUEST_DATA_PATH")
-    def quest_data(self) -> pd.DataFrame:
+    def quest_data(self) -> List[Dict[str,Any]]:
         return self.scrape_quest_data()
 
     def scrape(self) -> List[QuestItem]:
         """Get all Quest info for MH Rise/ Sunbreak and return list of structured quest data."""
+        monster_names = [""]
+
+        monster_page_data = self.monster_page_data
+        quest_data = self.quest_data
+
+        # TODO: extract unique monster names, process their data and pack as QuestItem
+
         pass
+        
 
-    def merge(self) -> pd.DataFrame: 
-        """Merge subsets to complete dataset and return as Pandas DF."""
-        pass
-
-    def scrape_monster_links(self) -> List[str]:
-            """"Find all Monster page links from Monster overview page."""
-            logger.info(f"No MONSTER LINKS found at {self.DEFAULT_MONSTER_LINK_PATH}. Start scraping from {self.BASE_URL}")
-            
-            soup = self.retrieve_soup(self.BASE_URL)
-            monster_table = soup.find("ul", class_="mh-list-monster")
-            _monster_links = [urljoin(self.BASE_URL, a["href"]) for a in monster_table.find_all("a", href=True) if a["href"]]
-
-            self.DEFAULT_MONSTER_LINK_PATH.parent.mkdir(parents=True, exist_ok=True)
-            with open(self.DEFAULT_MONSTER_LINK_PATH, "w", encoding="utf-8") as f:
-                for link in _monster_links:
-                    print(link, file=f)
-
-            logger.info(f"Scraped MONSTER LINKS saved to {self.DEFAULT_MONSTER_LINK_PATH}")
-            return _monster_links
-
-    def scrape_key_quests(self) -> List[str]:
-            """Scrape all key quests from Fextralife Wiki, if not previously initiated and save."""
-            logger.info(f"No KEY QUEST found at {self.DEFAULT_KEY_QUEST_PATH}. Start scraping from {self.KEY_QUEST_URL}")
-            soup = self.retrieve_soup(self.KEY_QUEST_URL)
-    
-            key_quest_tags = soup.select("p:has(img[title='key_quests_mhrise_wiki_guide_50px']) a")
-            _key_quests = [a.text.strip() for a in key_quest_tags if a.text.strip()]
-    
-            self.DEFAULT_KEY_QUEST_PATH.parent.mkdir(parents=True, exist_ok=True)
-            with open(self.DEFAULT_KEY_QUEST_PATH, "w", encoding="utf-8") as f:
-                for quest in _key_quests:
-                    print(quest, file=f)
-
-            logger.info(f"Scraped KEY QUESTS saved to {self.DEFAULT_KEY_QUEST_PATH}")
-            return _key_quests 
-
-    def scrape_monster_page_info(self) -> pd.DataFrame:
+    def scrape_monster_page_info(self) -> List[Dict[str,Any]]:
             """Scrape all data from all data from Monster pages. Save to csv and return df."""
             logger.info(f"No MONSTER PAGE DATA found at {self.DEFAULT_MONSTER_DATA_PATH}. Start scraping from {self.BASE_URL}")
 
@@ -125,14 +97,10 @@ class RiseQuestScraper(AbstractWebScraper[QuestItem]):
     
                 except AttributeError:
                     logger.warning(f"Different data structure for {link}! Skip entry...")
-    
-            df = pd.DataFrame(monster_page_data)
-            df.to_csv(self.DEFAULT_MONSTER_DATA_PATH, index=False)
 
-            logger.info(f"Scraped MONSTER DATA saved to {self.DEFAULT_MONSTER_DATA_PATH}")
-            return df
+            return monster_page_data
 
-    def scrape_quest_data(self) -> pd.DataFrame:
+    def scrape_quest_data(self) -> List[Dict[str,Any]]:
         """Get all quest links from specific Monster page and loop through each quest using get_quest_data-function."""
         logger.info(f"No QUEST DATA found at {self.DEFAULT_QUEST_DATA_PATH}. Start scraping from {self.BASE_URL}")
 
@@ -219,8 +187,36 @@ class RiseQuestScraper(AbstractWebScraper[QuestItem]):
                 except AttributeError:
                     logger.warning(f"Different data structure for {quest}! Skip entry...")
 
-        df = pd.DataFrame(monster_quest_data)
-        df.to_csv(self.DEFAULT_QUEST_DATA_PATH, index=False)
+        return monster_quest_data
 
-        logger.info(f"Scraped QUEST DATA saved to {self.DEFAULT_QUEST_DATA_PATH}")
-        return df
+    def _scrape_monster_links(self) -> List[str]:
+        """"Find all Monster page links from Monster overview page."""
+        logger.info(f"No MONSTER LINKS found at {self.DEFAULT_MONSTER_LINK_PATH}. Start scraping from {self.BASE_URL}")
+        
+        soup = self.retrieve_soup(self.BASE_URL)
+        monster_table = soup.find("ul", class_="mh-list-monster")
+        _monster_links = [urljoin(self.BASE_URL, a["href"]) for a in monster_table.find_all("a", href=True) if a["href"]]
+
+        self.DEFAULT_MONSTER_LINK_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(self.DEFAULT_MONSTER_LINK_PATH, "w", encoding="utf-8") as f:
+            for link in _monster_links:
+                print(link, file=f)
+
+        logger.info(f"Scraped MONSTER LINKS saved to {self.DEFAULT_MONSTER_LINK_PATH}")
+        return _monster_links
+
+    def _scrape_key_quests(self) -> List[str]:
+        """Scrape all key quests from Fextralife Wiki, if not previously initiated and save."""
+        logger.info(f"No KEY QUEST found at {self.DEFAULT_KEY_QUEST_PATH}. Start scraping from {self.KEY_QUEST_URL}")
+        soup = self.retrieve_soup(self.KEY_QUEST_URL)
+
+        key_quest_tags = soup.select("p:has(img[title='key_quests_mhrise_wiki_guide_50px']) a")
+        _key_quests = [a.text.strip() for a in key_quest_tags if a.text.strip()]
+
+        self.DEFAULT_KEY_QUEST_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(self.DEFAULT_KEY_QUEST_PATH, "w", encoding="utf-8") as f:
+            for quest in _key_quests:
+                print(quest, file=f)
+
+        logger.info(f"Scraped KEY QUESTS saved to {self.DEFAULT_KEY_QUEST_PATH}")
+        return _key_quests 

@@ -1,3 +1,4 @@
+import json
 import logging
 import pandas as pd
 from functools import wraps
@@ -5,7 +6,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-def file_cache(path_attr: str, index_col: str | None = None):
+def file_cache(path_attr: str, dataclass_cls: type | None = None, index_col: str | None = None):
     def decorator(scrape_func):
         @wraps(scrape_func)
         def wrapper(self):
@@ -20,6 +21,14 @@ def file_cache(path_attr: str, index_col: str | None = None):
 
                 path.parent.mkdir(parents=True, exist_ok=True)
                 match file_ending:
+                    case ".json":
+                        with open(path, "w", encoding="utf-8") as f:
+                            if dataclass_cls and hasattr(data[0], "__dataclass_fields__"):
+                                import dataclasses
+                                json_data = [dataclasses.asdict(item) for item in data]
+                            else:
+                                json_data = data
+                            json.dump(json_data, f, indent=4, ensure_ascii=False)
                     case ".csv":
                         data.to_csv(path, index=False)
                     case ".txt":
@@ -34,6 +43,12 @@ def file_cache(path_attr: str, index_col: str | None = None):
 
             logger.info(f"Reading {data_name} from disk at {path}.")
             match file_ending:
+                case ".json":
+                    with open(path, "r", encoding="utf-8") as f:
+                        raw_data = json.load(f)
+                        if dataclass_cls:
+                            return [dataclass_cls(**item) for item in raw_data]
+                        return raw_data
                 case ".csv":
                     return pd.read_csv(path, index_col=index_col)
                 case ".txt":

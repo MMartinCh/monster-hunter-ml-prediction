@@ -30,11 +30,6 @@ class AbstractWebScraper[T](ABC):
         """Scrape data and return list of structured entries."""
         pass
 
-    # @abstractmethod
-    # def merge(self) -> List[T]:
-    #     """Merge subsets of data into complete game dataset."""
-    #     pass
-
     def retrieve_soup(self, url: Optional[str] = None, polite: bool = True) -> BeautifulSoup | None:
         """Fetches html from url and returns a BeautifulSoup object."""
 
