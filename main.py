@@ -3,7 +3,7 @@ import sys
 
 from pathlib import Path
 
-from src.data_collection.scrapers.partial import RiseQuestScraper # type: ignore
+from src.data_collection.scrapers.partial import RiseQuestScraper, WorldQuestScraper, WildsQuestScraper # type: ignore
 from src.data_collection.scrapers import MHWikiScraper, RankingScraper, CompleteQuestScraper
 from src.data_collection.scrapers.ranking_scraper import RankingScraper
 from src.data_collection.repositories import DataMerger, LocalCsvRepository
@@ -45,8 +45,8 @@ if __name__ == "__main__":
             wiki_data = repository.load("wiki_data.csv")
 
         case "TEST":
-            test_rise_quest_scraper = RiseQuestScraper()
-            test_data = test_rise_quest_scraper.quest_data
+            test_scraper = WorldQuestScraper()
+            test_data = test_scraper.processed_stock_data
             print("Test Results")
             print("="*30)
             print(test_data)

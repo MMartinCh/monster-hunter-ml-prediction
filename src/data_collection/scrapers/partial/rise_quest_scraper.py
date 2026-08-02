@@ -9,8 +9,9 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 import pandas as pd
 
-from src.core.interfaces import AbstractWebScraper # type: ignore
-from src.core.dataclasses import QuestItem # type: ignore
+from src.core.interfaces import AbstractWebScraper #type:ignore
+from src.core.helpers import file_cache #type:ignore
+from src.core.dataclasses import QuestItem # type:ignore
 
 logger = logging.getLogger(__name__)
 
@@ -18,48 +19,45 @@ class RiseQuestScraper(AbstractWebScraper[QuestItem]):
     """Partial Scraper Class that scrapes quest data for MH Rise/ Sunbreak.
     To be called via QuestScraper class.
     """
+    def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
     BASE_URL = r"https://mhrise.mhrice.info/monster.html"
     KEY_QUEST_URL = r"https://monsterhunterrise.wiki.fextralife.com/Hub+Quests"
 
-    # helpers
-    DEFAULT_KEY_QUEST_PATH = Path(r"C:\Users\Martin\Desktop\monster-hunter-ml-prediction\data\subsets\rise\helper\key_quests.txt")
-    DEFAULT_MONSTER_LINK_PATH = Path(r"C:\Users\Martin\Desktop\monster-hunter-ml-prediction\data\subsets\rise\helper\monster_links.txt")
-    # datasets
-    DEFAULT_MONSTER_DATA_PATH = Path(r"C:\Users\Martin\Desktop\monster-hunter-ml-prediction\data\subsets\rise\monster_page_data.csv")
-    DEFAULT_QUEST_DATA_PATH = Path(r"C:\Users\Martin\Desktop\monster-hunter-ml-prediction\data\subsets\rise\quest_data.csv")
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    DATA_PATH = AbstractWebScraper.DATA_PATH / "subsets" / "rise"
+    DEFAULT_MONSTER_DATA_PATH = DATA_PATH / "monster_page_data.csv"
+    DEFAULT_QUEST_DATA_PATH = DATA_PATH / "quest_data.csv"
+    DEFAULT_KEY_QUEST_PATH =  DATA_PATH / "helper" / "key_quests.txt"
+    DEFAULT_MONSTER_LINK_PATH = DATA_PATH / "helper"  / "monster_links.txt"
 
     @cached_property
+    @file_cache("DEFAULT_MONSTER_LINK_PATH")
     def monster_links(self) -> List[str]:
-        if self.DEFAULT_MONSTER_LINK_PATH.exists():
-            logger.info(f"Read MONSTER LINKS from disk at {self.DEFAULT_MONSTER_LINK_PATH}")
-            with open(self.DEFAULT_MONSTER_LINK_PATH) as f:
-                return[link.strip() for link in f]
         return self.scrape_monster_links()
 
     @cached_property
+    @file_cache("DEFAULT_KEY_QUEST_PATH")
     def key_quests(self) -> List[str]:
-        if self.DEFAULT_KEY_QUEST_PATH.exists():
-            logger.info(f"Read KEY QUESTS from disk at {self.DEFAULT_KEY_QUEST_PATH}")
-            with open(self.DEFAULT_KEY_QUEST_PATH, "r", encoding="utf-8") as f:
-                return [quest.strip() for quest in f]
         return self.scrape_key_quests()
 
     @cached_property
+    @file_cache("DEFAULT_MONSTER_DATA_PATH")
     def monster_page_data(self) -> pd.DataFrame:
-        if self.DEFAULT_MONSTER_DATA_PATH.exists():
-            logger.info(f"Read MONSTER PAGE DATA from disk at {self.DEFAULT_MONSTER_DATA_PATH}")
-            return pd.read_csv(self.DEFAULT_MONSTER_DATA_PATH, index_col="monster_name")
         return self.scrape_monster_page_info()
 
     @cached_property
+    @file_cache("DEFAULT_QUEST_DATA_PATH")
     def quest_data(self) -> pd.DataFrame:
-        if self.DEFAULT_QUEST_DATA_PATH.exists():
-            logger.info(f"Read QUEST DATA from disk at {self.DEFAULT_QUEST_DATA_PATH}")
-            return pd.read_csv(self.DEFAULT_QUEST_DATA_PATH, index_col="title")
         return self.scrape_quest_data()
+
+    def scrape(self) -> List[QuestItem]:
+        """Get all Quest info for MH Rise/ Sunbreak and return list of structured quest data."""
+        pass
+
+    def merge(self) -> pd.DataFrame: 
+        """Merge subsets to complete dataset and return as Pandas DF."""
+        pass
 
     def scrape_monster_links(self) -> List[str]:
             """"Find all Monster page links from Monster overview page."""
@@ -226,28 +224,3 @@ class RiseQuestScraper(AbstractWebScraper[QuestItem]):
 
         logger.info(f"Scraped QUEST DATA saved to {self.DEFAULT_QUEST_DATA_PATH}")
         return df
-
-    # main scraping section
-    def scrape(self) -> List[QuestItem]:
-        """ Get all quest info from mhrise.info."""
-        rise_quest_info = []
-
-        overview_soup = self.retrieve_soup(self.BASE_URL)
-        monster_table = overview_soup.find("ul", class_="mh-list-monster")
-        monster_links = [urljoin(self.BASE_URL, a["href"]) for a in monster_table.find_all("a", href=True) if a["href"]]
-
-        for link in monster_links:
-            try:
-                monster_soup = self.retrieve_soup(link)
-                monster_name = monster_soup.select_one('span.lang-default.mh-lang[lang="en"]').get_text(strip=True)
-                #monster_base_hps = self.get_monster_page_info(monster_soup)
-                monster_quests = self.get_quests_for_monster(monster_soup)
-
-            except KeyboardInterrupt:
-                logger.warning("Rise HP scraping manually interrupted.")
-                return rise_quest_info
-
-            except Exception as e:
-                logger.warning(f"Failure for extracting {link}: {e}")
-
-        return rise_quest_info

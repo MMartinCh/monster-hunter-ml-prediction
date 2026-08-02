@@ -1,6 +1,7 @@
 import logging
 import requests
 from abc import ABC, abstractmethod
+from pathlib import Path
 from time import sleep
 from typing import List, Optional
 
@@ -10,8 +11,10 @@ logger = logging.getLogger(__name__)
 
 class AbstractWebScraper[T](ABC):
     """Abstract base class for all web based scrapers"""
-    
-    
+
+    ROOT_PATH = Path(__file__).resolve().parents[3]
+    DATA_PATH = ROOT_PATH / "data"
+
     def __init__(self, 
                  url: Optional[str] = None, 
                  headers: Optional[dict] = None
@@ -27,17 +30,23 @@ class AbstractWebScraper[T](ABC):
         """Scrape data and return list of structured entries."""
         pass
 
-    def retrieve_soup(self, url: Optional[str] = None) -> BeautifulSoup | None:
+    # @abstractmethod
+    # def merge(self) -> List[T]:
+    #     """Merge subsets of data into complete game dataset."""
+    #     pass
+
+    def retrieve_soup(self, url: Optional[str] = None, polite: bool = True) -> BeautifulSoup | None:
         """Fetches html from url and returns a BeautifulSoup object."""
 
         if url is None:
             url = self.url
 
-        sleep(1.0)
+        if polite:
+            sleep(1.0)
 
         try:
             logger.info(f"Retrieving soup from: {url}")
-            response = requests.get(url, headers=self.headers, timeout=10)
+            response = requests.get(url, headers=self.headers, timeout=10) #type:ignore
             
             if response.status_code == 200:
                 logger.debug(f"Request successful!: {response.status_code}")
@@ -49,3 +58,6 @@ class AbstractWebScraper[T](ABC):
         except requests.exceptions.RequestException as e:
             logger.error(f"Network error occurred while fetching {url}: {e}")
             return None
+
+ROOT_PATH = Path(__file__).resolve().parents[3]
+print(ROOT_PATH / "data")            
