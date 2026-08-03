@@ -46,10 +46,11 @@ if __name__ == "__main__":
 
         case "TEST":
             test_scraper = RiseQuestScraper()
-            test_data = test_scraper.monster_page_data
+            test_data = test_scraper.scrape()
             print("Test Results")
             print("="*30)
-            print(test_data)
+            for data in test_data:
+                print(data)
 
     # Merge data
     #merged_data = merger.merge(ranking_data, wiki_data)
