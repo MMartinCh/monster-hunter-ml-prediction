@@ -45,8 +45,8 @@ if __name__ == "__main__":
             wiki_data = repository.load("wiki_data.csv")
 
         case "TEST":
-            test_scraper = WorldQuestScraper()
-            test_data = test_scraper.processed_stock_data
+            test_scraper = RiseQuestScraper()
+            test_data = test_scraper.monster_page_data
             print("Test Results")
             print("="*30)
             print(test_data)

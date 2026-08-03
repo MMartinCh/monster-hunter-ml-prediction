@@ -6,7 +6,13 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-def file_cache(path_attr: str, dataclass_cls: type | None = None, index_col: str | None = None):
+def file_cache(
+        path_attr: str, 
+        dataclass_cls: type | None = None, 
+        index_col: str | None = None,
+        overwrite: bool | None = None
+        ):
+    
     def decorator(scrape_func):
         @wraps(scrape_func)
         def wrapper(self):
@@ -14,8 +20,12 @@ def file_cache(path_attr: str, dataclass_cls: type | None = None, index_col: str
             data_name = path.stem.upper()
             file_ending = path.suffix
 
-            if not path.exists():
-                logger.info(f"{data_name} not found at {path}! Start scraping...")
+            do_overwrite = overwrite if overwrite is not None else getattr(self, "overwrite", False)
+            if not path.exists() or do_overwrite:
+                if do_overwrite:
+                    logger.info(f"Overwriting {data_name}...")
+                elif not path.exists():
+                    logger.info(f"{data_name} not found at {path}! Start scraping...")
 
                 data = scrape_func(self)
 
