@@ -2,10 +2,12 @@ import logging
 import re
 from functools import cached_property
 from pathlib import Path
-from typing import List
+from typing import Any, Dict, List
+from urllib.parse import urljoin
 
 import numpy as np
 import pandas as pd
+from bs4 import BeautifulSoup
 
 from src.core.interfaces import AbstractWebScraper
 from src.core.dataclasses import QuestItem
@@ -14,93 +16,119 @@ from src.core.helpers import file_cache
 logger = logging.getLogger(__name__)
 
 class WildsQuestScraper(AbstractWebScraper[QuestItem]):
-    """Partial Scraper Class that scrapes quest data for MH Wilds from Kiranico.
+    """Partial Scraper Class that scrapes quest data for MH Wilds from MH Wiki.
     To be called via QuestScraper class.
     """
-    BASE_URL = r"https://mhwilds.kiranico.com/data/quests"
+    MHWIKI_URL = r"https://monsterhunterwiki.org/wiki/MHWilds/Quests/"
+    KIRANICO_URL = r"https://mhwilds.kiranico.com/data/quests"
 
     DATA_PATH = AbstractWebScraper.DATA_PATH / "subsets" / "wilds"
-    DEFAULT_QUEST_DATA_PATH = DATA_PATH / "wilds_quests.csv"
-
-    def scrape(self) -> List[QuestItem]:
-        """Scrape all MH Wilds quests and return as structured quest data per quest."""
-        pass
-
-    def merge(self) -> pd.DataFrame:
-        """Combine subsets to complete Pandas DF."""
-        pass
+    QUEST_DATA_PATH = DATA_PATH / "raw_wilds_quests.json"
+    HP_RP_DATA_PATH = DATA_PATH / "hp_and_rp.json" 
 
     @cached_property
-    @file_cache("DEFAULT_QUEST_DATA_PATH")
-    def wilds_quest_data(self) -> pd.DataFrame:
-        return self.scrape_quests()
+    @file_cache("QUEST_DATA_PATH", overwrite=True)
+    def raw_quest_data(self) -> List[Dict[str,Any]]:
+        return self.scrape_raw_quests()
 
-    def scrape_quests(self) -> pd.DataFrame:
-        """Scrapes quest and monster data from the Monster Hunter Wilds Kiranico database."""
-        logger.info(f"No WILDS QUEST DATA found at {self.DEFAULT_QUEST_DATA_PATH}. Start scraping...")
-        wilds_data = []
+    @cached_property
+    @file_cache("HP_RP_DATA_PATH")
+    def hp_rp_data(self) -> Dict[str,Dict[str,int]]:
+        return self.scrape_hp_and_rp()
 
-        soup = self.retrieve_soup(self.BASE_URL)
+    def scrape(self) -> List[QuestItem]:
+
+        # TODO: for missing hp and rp - get base hp and use generic multiplier for lr and hr; same for rp
+        quest_items = []
+        raw_quest_data_ = self.raw_quest_data
+        
+        for i, quest in enumerate(raw_quest_data_):
+            hp_rp = self.hp_rp_data.get(quest["title"], {})
+            
+            target_hp = hp_rp.get("targets_hp", None) 
+            reward_points = hp_rp.get("reward_points", 0)
+
+            quest_items.append(
+                QuestItem(
+                    title=quest["title"],
+                    quest_id=f"mh_wilds_{i}",
+                    rank=quest["rank"],
+                    level=quest["level"],
+                    is_assignment=quest["is_assignment"],
+                    is_event=quest["is_event"],
+                    targets=quest["targets"],
+                    target_hp=target_hp,
+                    reward_zenny=quest["reward_zenny"],
+                    reward_points=reward_points,
+                )
+            )
+        return quest_items
+
+    def scrape_raw_quests(self) -> List[Dict[str,Any]]:
+        """Scrape all MH Wilds quests and return as structured quest data per quest."""
+        raw_rise_quests = []
+        for quest_type in ["Assignments", "Optional_Quests", "Event_Quests"]:
+            raw_rise_quests.extend(self._extract_quest_data(quest_type))
+        return raw_rise_quests
+
+    def _extract_quest_data(self, quest_type: str) -> List[Dict[str,Any]]:
+        full_link = urljoin(self.MHWIKI_URL, quest_type)
+        soup = self.retrieve_soup(full_link)
+        quest_tables = soup.select('table.wikitable[style="text-align:center; width:100%"]')
+
+        quest_data = []
+        for table in quest_tables:
+            header = table.find('th', colspan='3')
+            title = header.find('a', href=True, title=True).text.strip()
+            level = int(header.find('span', string=re.compile(r'\d+')).text.replace("★","").strip())
+            rank = "LR" if level <= 3 else "HR"
+
+            goal_div, details_div, _ = table.select('td[style^="width:33.33%"]')
+            targets = [
+                span.find('a').get('title').strip()
+                for span in goal_div.find_all('span', typeof="mw:File")
+                if span.find('a') and span.find('a').get('title')
+            ]
+
+            requirements = details_div.find('b', string="Requirements:").next_sibling.strip()
+            locale = details_div.find('b', string="Locale:").find_next_sibling('a').text.strip()
+            reward_zenny = int(details_div.find('b', string="Reward Money:").next_sibling.replace("z","").strip())
+
+            quest_data.append({
+                "title": title,
+                "level": level,
+                "rank": rank,
+                "targets": targets,
+                "requirements": requirements,
+                "locale": locale,
+                "reward_zenny": reward_zenny,
+                "is_assignment": quest_type == "Assignments",
+                "is_event": quest_type == "Event_Quests",
+            })
+            print(quest_data)
+        
+        return quest_data
+
+    def scrape_hp_and_rp(self) -> Dict[str,Dict[str,int]]:
+        """Scrapes Rank Points and Monster Hp for every quest from the Monster Hunter Wilds Kiranico database."""
+        soup = self.retrieve_soup(self.KIRANICO_URL)
         table = soup.find("table", class_="w-full caption-bottom text-sm")
         quest_rows = table.find_all("tr")
 
-        unique_monsters = set()
+        quest_rp_and_hp = {}
         for row in quest_rows:
-            for link in row.find_all("a", href=re.compile(r"/data/monsters/")):
-                unique_monsters.add(link.text.strip())
-
-        # Collect all quest data mapped to monsters
-        all_quests_for_monsters = {monster_name: [] for monster_name in unique_monsters}
-        
-        for row in quest_rows:
-            quest_data = {}
             cells = row.find_all("td")
 
-            quest_data["title"] = cells[0].text.strip()
-            quest_data["reward"] = int(cells[1].text.strip().replace(",", "").replace("HRP", ""))
-
+            title = cells[0].text.split("]")[-1].strip()
+            reward_points = int(cells[1].text.strip().replace(",", "").replace("HRP", ""))
             monsters_in_quest = [link.text.strip() for link in cells[2].find_all("a") if link.text.strip()]
-            primary_monster = monsters_in_quest[0] if monsters_in_quest else None
 
             monster_hp_divs = [div.text.strip() for div in cells[3].find_all("div") if div.text.strip()]
-            quest_data["monster_hp"] = int(monster_hp_divs[0].replace(",", "").replace("HP", "")) if monster_hp_divs else None
+            monster_hp = int(monster_hp_divs[0].replace(",", "").replace("HP", "")) if monster_hp_divs else None
 
-            quest_data["level"] = int(re.search(r"\d★", quest_data.get("title")).group().replace("★", ""))
-            quest_data["is_assignment"] = "Assignment" in quest_data.get("title")
-
-            match quest_data.get("level"):
-                case level if level <= 3:
-                    quest_data["rank"] = "Low"
-                case level if level <= 6:
-                    quest_data["rank"] = "High"
-                case level if level > 6:
-                    quest_data["rank"] = "Master"
-                case _:
-                    quest_data["rank"] = "Unknown"
-
-            if primary_monster is not None:
-                all_quests_for_monsters[primary_monster].append(quest_data)
-
-        # Process statistics per monster
-        # TODO: new format - only quests
-        for monster, quests in all_quests_for_monsters.items():
-            monster_data = {
-                "monster_name": monster,
-                "game_appearances": 1,
-                "quest_appearances": len(quests),
-                "has_assignment": any(q["is_assignment"] for q in quests),
-                "initial_quest": min(q["level"] for q in quests)
+            quest_rp_and_hp[title] = {
+                "reward_points": reward_points,
+                "targets": monsters_in_quest,
+                "targets_hp": monster_hp,
             }
-
-            rank_mapping = {"lr": "Low", "hr": "High", "mr": "Master"}
-            for rank_prefix, rank_name in rank_mapping.items():
-                monster_data[f"{rank_prefix}_hp"] = np.mean(
-                    [q["monster_hp"] for q in quests if q["rank"] == rank_name]
-                )
-                monster_data[f"{rank_prefix}_reward"] = np.mean(
-                    [q["reward"] for q in quests if q["rank"] == rank_name]
-                )
-
-            wilds_data.append(self.convert_to_quest_item(monster_data))
-        
-        return wilds_data
+        return quest_rp_and_hp

@@ -28,7 +28,7 @@ class RiseQuestScraper(AbstractWebScraper[QuestItem]):
 
     DATA_PATH = AbstractWebScraper.DATA_PATH / "subsets" / "rise"
     MONSTER_DATA_PATH = DATA_PATH / "monster_page_data.json"
-    QUEST_DATA_PATH = DATA_PATH / "quest_data.json"
+    QUEST_DATA_PATH = DATA_PATH / "raw_quest_data.json"
     KEY_QUEST_PATH =  DATA_PATH / "helper" / "key_quests.txt"
     MONSTER_LINK_PATH = DATA_PATH / "helper" / "monster_links.txt"
     QUEST_LINK_PATH = DATA_PATH / "helper" / "quest_links.txt"

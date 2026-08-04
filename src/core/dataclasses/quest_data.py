@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 class QuestItem:
     """Item representing quest data for one quest."""
     title: str
-    id: Optional[str] = None 
+    quest_id: Optional[str] = None 
 
     rank: Optional[str] = None
     level: Optional[int] = None

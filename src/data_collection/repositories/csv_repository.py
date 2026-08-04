@@ -5,23 +5,18 @@ import sys
 import pandas as pd
 
 from pathlib import Path
-from typing import List, get_type_hints
+from typing import Any, List, get_type_hints
 
 from src.core.interfaces import AbstractMonsterRepository
-from src.core.dataclasses import MonsterData
 
 logger = logging.getLogger(__name__)
 
 class LocalCsvRepository(AbstractMonsterRepository):
     """Handles persistence using flat CSV files."""
-    
-    def __init__(self, data_path: Path, default_file_name: str = "mh_repository.csv") -> None:
-        self.DATA_PATH = data_path
-        self.default_file_name = default_file_name
+    DATA_PATH = AbstractMonsterRepository.DATA_PATH
 
-    def save(self, monsters: List[MonsterData] | pd.DataFrame, file_name: str = None) -> None:
-        file_name = self.default_file_name if file_name is None else file_name
-        file_path = self.DATA_PATH / file_name
+    def save(self, monsters: List[Any] | pd.DataFrame, path: Path = DATA_PATH, file_name: str = "default.csv") -> None:
+        file_path = path / file_name
 
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -50,7 +45,7 @@ class LocalCsvRepository(AbstractMonsterRepository):
 
         logger.info(f"Data successfully saved to: {file_path}!")
 
-    def load(self, file_name: str = None) -> List[MonsterData]:
+    def load(self, file_name: str = None) -> List[Any]:
         file_name = self.default_file_name if file_name is None else file_name
         file_path = self.DATA_PATH / file_name
 
@@ -60,7 +55,7 @@ class LocalCsvRepository(AbstractMonsterRepository):
         if not file_path.exists():
             return monsters
 
-        type_hints = get_type_hints(MonsterData)
+        type_hints = get_type_hints(Any)
 
         with open(file_path, mode="r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
@@ -106,6 +101,6 @@ class LocalCsvRepository(AbstractMonsterRepository):
                     else:
                         monster_kwargs[field_name] = val
 
-                monsters.append(MonsterData(**monster_kwargs))
+                monsters.append(Any(**monster_kwargs))
 
         return monsters

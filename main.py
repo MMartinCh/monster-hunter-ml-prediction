@@ -18,12 +18,12 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
 
     # Initiate classes
-    DATA_PATH = Path(__file__).resolve().parent/ "data" / "subsets"
+    DATA_PATH = Path(__file__).resolve().parent/ "data"
     MODE = "TEST"
 
     logger.info(f"Start session | Data Path: {DATA_PATH} | Mode: {MODE}")
 
-    repository = LocalCsvRepository(DATA_PATH)
+    repository = LocalCsvRepository()
     merger = DataMerger()
     ranking_scraper = RankingScraper()
     wiki_scraper = MHWikiScraper()
@@ -45,12 +45,15 @@ if __name__ == "__main__":
             wiki_data = repository.load("wiki_data.csv")
 
         case "TEST":
-            test_scraper = RiseQuestScraper()
+            test_scraper = WildsQuestScraper()
             test_data = test_scraper.scrape()
             print("Test Results")
             print("="*30)
             for data in test_data:
                 print(data)
+
+            repository.save(test_data, DATA_PATH / "subsets" / "wilds", "wilds_quest_data.csv")
+    
 
     # Merge data
     #merged_data = merger.merge(ranking_data, wiki_data)
