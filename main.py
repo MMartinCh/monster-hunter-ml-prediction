@@ -46,11 +46,10 @@ if __name__ == "__main__":
 
         case "TEST":
             test_scraper = WorldQuestScraper()
-            test_data = test_scraper.monster_hp
+            test_data = test_scraper.scrape_monster_data(test_scraper.monster_links.get("Nergigante"))
             print("Test Results")
             print("="*30)
-            for mon, link in test_data.items():
-                print(mon, link)
+            print(test_data)
 
     # Merge data
     #merged_data = merger.merge(ranking_data, wiki_data)
