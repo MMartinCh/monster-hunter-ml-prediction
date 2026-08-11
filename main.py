@@ -45,15 +45,12 @@ if __name__ == "__main__":
             wiki_data = repository.load("wiki_data.csv")
 
         case "TEST":
-            test_scraper = WildsQuestScraper()
-            test_data = test_scraper.scrape()
+            test_scraper = WorldQuestScraper()
+            test_data = test_scraper.monster_hp
             print("Test Results")
             print("="*30)
-            for data in test_data:
-                print(data)
-
-            repository.save(test_data, DATA_PATH / "subsets" / "wilds", "wilds_quest_data.csv")
-    
+            for mon, link in test_data.items():
+                print(mon, link)
 
     # Merge data
     #merged_data = merger.merge(ranking_data, wiki_data)
