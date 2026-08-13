@@ -46,13 +46,15 @@ if __name__ == "__main__":
 
         case "TEST":
             test_scraper = WorldQuestScraper()
-            test_data = test_scraper.scrape_monster_data(test_scraper.monster_links.get("Nergigante"))
+            test_data = test_scraper.scrape()
             print("Test Results")
             print("="*30)
-            print(test_data)
+            #print(test_data)
+
+            repository.save(test_data, file_name="test_data.csv")
 
     # Merge data
     #merged_data = merger.merge(ranking_data, wiki_data)
 
     # Save data
-    #repository.save(merged_data, file_name="attempt_merge.csv")
+    

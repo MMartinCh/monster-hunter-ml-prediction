@@ -60,7 +60,7 @@ class RiseQuestScraper(AbstractWebScraper[QuestItem]):
 
     def scrape(self) -> List[QuestItem]:
         """Get all Quest info for MH Rise/ Sunbreak and return list of structured quest data."""
-        return [
+        return[
             QuestItem(
                 title=quest["title"],
                 id=quest["id"],
@@ -72,9 +72,9 @@ class RiseQuestScraper(AbstractWebScraper[QuestItem]):
                 target_hp=self._calculate_target_hp(quest),
                 reward_zenny=quest["reward_zenny"],
                 reward_points=quest["reward_rank_points"],
-            )
+                )
             for quest in self.quest_data
-        ]
+            ]
 
     def scrape_monster_page_data(self) -> Dict[str,Dict[str,float]]:
             """Scrape all data from all data from Monster pages. Save to csv and return df."""
