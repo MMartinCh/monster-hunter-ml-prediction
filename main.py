@@ -46,12 +46,13 @@ if __name__ == "__main__":
 
         case "TEST":
             test_scraper = GenerationsQuestScraper()
-            test_data = test_scraper.monster_data
+            test_data = test_scraper.scrape()
+
             # print("Test Results")
             # print("="*30)
             # print(test_data)
 
-            #repository.save(test_data, file_name="test_data.csv")
+            repository.save(test_data, file_name="gu_test_data.csv")
 
     # Merge data
     #merged_data = merger.merge(ranking_data, wiki_data)
