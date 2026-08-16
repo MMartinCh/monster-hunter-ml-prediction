@@ -13,7 +13,6 @@ from src.core.dataclasses.quest_data import QuestItem #type:ignore
 class GenerationsQuestScraper(AbstractWebScraper[QuestItem]):
         """Partial Scraper Class that scrapes quest data for MH G/GU.
         To be called via QuestScraper class."""
-        ...
 
         KIRANICO_URL = r"https://mhgu.kiranico.com/"
 
