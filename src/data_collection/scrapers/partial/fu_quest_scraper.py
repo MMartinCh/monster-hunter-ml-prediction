@@ -90,7 +90,7 @@ class FUQuestScraper(AbstractWebScraper[QuestItem]):
                     title=quest.get("title"),
                     rank=rank,
                     level=quest.get("level"),
-                    is_assignment=quest.get("is_assignment"),
+                    is_assignment=quest.get("is_urgent"),
                     is_event=quest.get("is_event"),
                     targets=quest.get("targets"),
                     target_hp=target_hp,
@@ -130,7 +130,7 @@ class FUQuestScraper(AbstractWebScraper[QuestItem]):
         return {
             "title": title,
             "hub": hub,
-            "rank": self._match_rank(hub, level),
+            "rank": self._match_rank(hub, level, title),
             "level": level,
             "type": quest_type,
             "is_key": h1_tag.find("span", string="Key") is not None,
@@ -171,10 +171,13 @@ class FUQuestScraper(AbstractWebScraper[QuestItem]):
         col = soup.find("td", string=re.compile(attribute))
         return col.find_next("td").get_text(strip=True) if col else default #type:ignore
 
-    def _match_rank(self, hub:str, level:int) -> str:
+    def _match_rank(self, hub:str, level:int, title:str) -> str:
         rank = "LR"
-        if hub == "Caravan" and level > 6:
-            rank = "HR"
+        if hub == "Caravan":
+            if level > 6:
+                rank = "HR"
+            elif level == 10 and "Advanced" in title:
+                rank = "MR"
         elif hub in ["Guild", "Event"]:
             if level > 3:
                 rank = "HR"
