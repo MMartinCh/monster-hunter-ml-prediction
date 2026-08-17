@@ -44,16 +44,15 @@ if __name__ == "__main__":
             wiki_data = repository.load("wiki_data.csv")
 
         case "TEST":
-
             test_scraper = FUQuestScraper()
-            test_data = test_scraper.monster_data
+            test_data = test_scraper.scrape()
             
             print("Test Results")
             print("="*30)
             for i, data in enumerate(test_data):
                 print(i, ": ", data)
 
-            #repository.save(test_data, file_name="gu_test_data.csv")
+            repository.save(test_data, file_name="fu_test_data.csv")
 
     # Merge data
     #merged_data = merger.merge(ranking_data, wiki_data)

@@ -59,7 +59,47 @@ class FUQuestScraper(AbstractWebScraper[QuestItem]):
         return self._scrape_links("monster")
 
     def scrape(self) -> List[QuestItem]:
-        return []
+        hp_lookup = {
+            monster: hp
+            for monster_dict in self.monster_data
+            if (monster := monster_dict.get("monster_name"))
+            and (hp := {
+                "base": monster_dict.get("base_hp"),
+                "lr": monster_dict.get("lr_hp"),
+                "hr": monster_dict.get("hr_hp"),
+                "mr": monster_dict.get("mr_hp")
+            })
+        }
+
+        complete_data = []
+        for quest in self.quest_data:
+            if not quest.get("targets"):
+                continue
+
+            rank = quest.get("rank")
+            target_hp = {}
+            for target in quest.get("targets", []):
+                if monster_hp := hp_lookup.get(target):
+                    if hp_value := monster_hp.get(rank.lower() if rank else ""):
+                        target_hp[target] = hp_value
+                    elif base_hp := monster_hp.get("base"):
+                        target_hp[target] = base_hp
+
+            complete_data.append(
+                QuestItem(
+                    title=quest.get("title"),
+                    rank=rank,
+                    level=quest.get("level"),
+                    is_assignment=quest.get("is_assignment"),
+                    is_event=quest.get("is_event"),
+                    targets=quest.get("targets"),
+                    target_hp=target_hp,
+                    reward_zenny=quest.get("zenny"),
+                    reward_points=quest.get("points"),
+                )
+            )
+
+        return complete_data
 
     def scrape_quest(self, browser:Browser, link:str) -> Dict[str,Any]:
         soup = self.retrieve_rendered_soup(browser, link)
