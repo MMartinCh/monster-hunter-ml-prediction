@@ -14,11 +14,15 @@ class FUQuestScraper(AbstractWebScraper[QuestItem]):
     """Partial Scraper Class that scrapes quest data for MH Four Ultimate.
     To be called via QuestScraper class."""
 
-    KIRANICO_URL = r"https://kiranico.com/en/mh4u/quest"
+    QUEST_URL = r"https://kiranico.com/en/mh4u/quest"
+    MONSTER_URL = r"https://kiranico.com/en/mh4u/monster"
 
     DATA_PATH = AbstractWebScraper.DATA_PATH / "subsets" / "four_ultimate"
     QUEST_DATA_PATH = DATA_PATH / "fu_quest_data.json"
+    MONSTER_DATA_PATH = DATA_PATH / "fu_monster_data.json"
     QUEST_LINKS_PATH = DATA_PATH / "helpers" / "fu_quest_links.txt"
+    MONSTER_LINKS_PATH = DATA_PATH / "helpers" / "fu_monster_links.txt"
+    
 
     @cached_property
     @file_cache("QUEST_DATA_PATH")
@@ -26,30 +30,53 @@ class FUQuestScraper(AbstractWebScraper[QuestItem]):
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             _quest_data = [
-                self.scrape_quest(quest, browser) 
-                for quest in self.quest_links
+                quest for link in self.quest_links
+                if (quest := self.scrape_quest(browser, link))
                 ]
             browser.close()
             return _quest_data
+
+    @cached_property
+    @file_cache("MONSTER_DATA_PATH")
+    def monster_data(self) -> List[Dict[str,Any]]:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            _monster_data = [
+                monster for link in self.monster_links
+                if (monster := self.scrape_monster(browser, link))
+                ]
+            browser.close()
+            return _monster_data
     
     @cached_property
     @file_cache("QUEST_LINKS_PATH")
     def quest_links(self) -> List[str]:
-        return self._scrape_quest_links()
+        return self._scrape_links("quest")
+
+    @cached_property
+    @file_cache("MONSTER_LINKS_PATH")
+    def monster_links(self) -> List[str]:
+        return self._scrape_links("monster")
 
     def scrape(self) -> List[QuestItem]:
         return []
 
-    def scrape_quest(self, link:str, browser:Browser) -> Dict[str,Any]:
+    def scrape_quest(self, browser:Browser, link:str) -> Dict[str,Any]:
         soup = self.retrieve_rendered_soup(browser, link)
         div = soup.select_one("div.col-sm-3")
 
         h1_tag = soup.find("h1")
-        title = h1_tag.get_text(strip=True) if h1_tag else ""
+        title = "".join([element for element in h1_tag.contents if isinstance(element, str)]).strip()
 
+        targets = [
+                target.text.strip()
+                for target in div.find_all(
+                    "a", string=True, href=re.compile(r"monster")
+                    )
+                ] 
         quest_type = self._get_quest_attribute(div, "Type")
-        if not quest_type in ["Hunting", "Slaying", "Special"]:
-            return {"title":title, "type":"no hunt"}
+        if not quest_type in ["Hunting", "Slaying", "Special"] or targets is None:
+            return {}
 
         hub_tags = div.find("td", colspan="2", string=True).text.strip().split(" ")
         hub = hub_tags[0]
@@ -61,7 +88,7 @@ class FUQuestScraper(AbstractWebScraper[QuestItem]):
         points = int(raw_hrp) if raw_hrp and raw_hrp.strip().isdigit() else 0
 
         return {
-            "title": h1_tag.get_text(strip=True),
+            "title": title,
             "hub": hub,
             "rank": self._match_rank(hub, level),
             "level": level,
@@ -70,18 +97,39 @@ class FUQuestScraper(AbstractWebScraper[QuestItem]):
             "is_urgent": h1_tag.find("span", string="Urgent") is not None,
             "is_event": hub == "Event",
             "map": self._get_quest_attribute(div, "Map"),
-            "targets": [
-                target.text.strip()
-                for target in div.find_all(
-                    "a", string=True, href=re.compile(r"monster"))
-                ],
+            "targets": targets,
             "zenny": zenny,
             "points": points,
         }
 
-    def _get_quest_attribute(self, soup: BeautifulSoup, attribute: str) -> str | None:
-        col = soup.find("td", string=attribute)
-        return col.find_next("td").get_text(strip=True) if col else None #type:ignore
+    def scrape_monster(self, browser:Browser, link:str) -> Dict[str,Any]:
+        soup = self.retrieve_rendered_soup(browser, link)
+
+        monster_name = "".join(
+            element for element in soup.find("h1") 
+            if isinstance(element, str)
+            ).strip()
+
+        hp_header = soup.find("h5", string="HP")
+        hp_table = hp_header.find_next("table")
+
+        size_header = soup.find("h5", string="Crown Sizes")
+        size_table = size_header.find_next("table")
+
+        return {
+            "monster_name": monster_name,
+            "base_hp": float(self._get_quest_attribute(hp_table, "Base HP", "0").replace("HP","").replace(",","").strip()), #type:ignore
+            "lr_hp": float(self._get_quest_attribute(hp_table, "Low", "0").replace("HP","").replace(",","").strip()), #type:ignore
+            "hr_hp": float(self._get_quest_attribute(hp_table, "High", "0").replace("HP","").replace(",","").strip()), #type:ignore
+            "mr_hp": float(self._get_quest_attribute(hp_table, "G", "0").replace("HP","").replace(",","").strip()), #type:ignore
+            "small_size": float(self._get_quest_attribute(size_table, "Miniature", "0").replace("<","").replace(">","")), #type:ignore
+            "large_size": float(self._get_quest_attribute(size_table, "Large", "0").replace("<","").replace(">","")), #type:ignore
+            "max_size": float(self._get_quest_attribute(hp_table, "King", "0").replace("<","").replace(">","")), #type:ignore
+        }
+
+    def _get_quest_attribute(self, soup: BeautifulSoup, attribute: str, default:Any = None) -> Any | None:
+        col = soup.find("td", string=re.compile(attribute))
+        return col.find_next("td").get_text(strip=True) if col else default #type:ignore
 
     def _match_rank(self, hub:str, level:int) -> str:
         rank = "LR"
@@ -94,12 +142,19 @@ class FUQuestScraper(AbstractWebScraper[QuestItem]):
                 rank = "MR"
         return rank
 
-    def _scrape_quest_links(self) -> List[str]:
+    def _scrape_links(self, type_:str) -> List[str]:
+        if not type_.lower() in ["monster", "quest"]:
+            raise AttributeError(f"Type {type_} no suitable category. Try MONSTER or QUEST...")
+
+        url = getattr(self, f"{type_.upper()}_URL")
+        soup = self.retrieve_soup(url)
         return [
-            row.get("href")
-            for row in self.retrieve_soup(self.KIRANICO_URL).find_all(
-                "a", string=True, href=re.compile(r"^https://kiranico.com/en/mh4u/quest/\w*/\d+/*")
-                )
+            link
+            for row in soup.find_all(
+                    "a", 
+                    string=True, 
+                    href=re.compile(rf"^https://kiranico.com/en/mh4u/{type_.lower()}/.*")
+                    )
+                    if (link := row.get("href"))
         ]
 
-    
