@@ -18,6 +18,9 @@ class WorldQuestScraper(AbstractWebScraper[QuestItem]):
     """Partial Scraper Class that scrapes quest data for MH World/ Icebreak.
     To be called via QuestScraper class.
     """
+    GAME = "World/ Iceborne"
+    GEN = 5
+
     BASE_URL = r"https://mhw.poedb.tw/eng/monsters/large"
 
     DATA_PATH = AbstractWebScraper.DATA_PATH / "subsets" / "world"
@@ -64,6 +67,8 @@ class WorldQuestScraper(AbstractWebScraper[QuestItem]):
             QuestItem(
                 title = quest["title"],
                 quest_id = quest["id_"],
+                game=self.GAME,
+                generation=self.GEN,
                 rank = quest["rank"],
                 level = quest["level"],
                 is_assignment = category_lookup.get(int(quest["id_"])) == "assigned",

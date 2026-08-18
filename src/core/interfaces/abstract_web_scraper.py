@@ -13,9 +13,6 @@ logger = logging.getLogger(__name__)
 class AbstractWebScraper[T](ABC):
     """Abstract base class for all web based scrapers"""
 
-    ROOT_PATH = Path(__file__).resolve().parents[3]
-    DATA_PATH = ROOT_PATH / "data"
-
     def __init__(self, 
                  url: Optional[str] = None, 
                  headers: Optional[dict] = None
@@ -25,6 +22,9 @@ class AbstractWebScraper[T](ABC):
         self.headers = headers or {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             }
+
+    ROOT_PATH = Path(__file__).resolve().parents[3]
+    DATA_PATH = ROOT_PATH / "data"
 
     @abstractmethod
     def scrape(self) -> List[T]:

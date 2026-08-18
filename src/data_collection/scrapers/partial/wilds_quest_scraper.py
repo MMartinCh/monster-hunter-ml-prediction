@@ -9,9 +9,9 @@ import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 
-from src.core.interfaces import AbstractWebScraper
-from src.core.dataclasses import QuestItem
-from src.core.helpers import file_cache
+from src.core.interfaces import AbstractWebScraper #type:ignore
+from src.core.dataclasses import QuestItem #type:ignore
+from src.core.helpers import file_cache #type:ignore
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,9 @@ class WildsQuestScraper(AbstractWebScraper[QuestItem]):
     """Partial Scraper Class that scrapes quest data for MH Wilds from MH Wiki.
     To be called via QuestScraper class.
     """
+    GAME = "Wilds"
+    GEN = 6
+
     MHWIKI_URL = r"https://monsterhunterwiki.org/wiki/MHWilds/Quests/"
     KIRANICO_URL = r"https://mhwilds.kiranico.com/data/quests"
 
@@ -52,6 +55,8 @@ class WildsQuestScraper(AbstractWebScraper[QuestItem]):
                 QuestItem(
                     title=quest["title"],
                     quest_id=f"mh_wilds_{i}",
+                    game=self.GAME,
+                    generation=self.GEN,
                     rank=quest["rank"],
                     level=quest["level"],
                     is_assignment=quest["is_assignment"],

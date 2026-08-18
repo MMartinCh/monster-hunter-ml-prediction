@@ -14,6 +14,9 @@ class GenerationsQuestScraper(AbstractWebScraper[QuestItem]):
         """Partial Scraper Class that scrapes quest data for MH G/GU.
         To be called via QuestScraper class."""
 
+        GAME = "Generations Ultimate"
+        GEN = 4
+
         KIRANICO_URL = r"https://mhgu.kiranico.com/"
 
         DATA_PATH = AbstractWebScraper.DATA_PATH / "subsets" / "generations"
@@ -53,6 +56,8 @@ class GenerationsQuestScraper(AbstractWebScraper[QuestItem]):
                         QuestItem(
                                 title=quest.get("title"),
                                 quest_id=quest.get("id_"),
+                                game=self.GAME,
+                                generation=self.GEN,
                                 rank=quest.get("rank"),
                                 level=quest.get("level"),
                                 is_assignment=quest.get("is_urgent"),

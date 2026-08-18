@@ -23,6 +23,9 @@ class RiseQuestScraper(AbstractWebScraper[QuestItem]):
             super().__init__(*args, **kwargs)
             self.overwrite = overwrite
 
+    GAME = "Rise/ Sunbreak"
+    GEN = 5
+
     BASE_URL = r"https://mhrise.mhrice.info/monster.html"
     KEY_QUEST_URL = r"https://monsterhunterrise.wiki.fextralife.com/Hub+Quests"
 
@@ -64,6 +67,8 @@ class RiseQuestScraper(AbstractWebScraper[QuestItem]):
             QuestItem(
                 title=quest["title"],
                 id=quest["id"],
+                game=self.GAME,
+                generation=self.GEN,
                 rank=quest["rank"],
                 level=quest["level"],
                 is_assignment=quest["is_assignment"],

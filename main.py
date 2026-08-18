@@ -2,7 +2,7 @@ import logging
 import sys
 from pathlib import Path
 
-from src.data_collection.scrapers.partial import FUQuestScraper, GenerationsQuestScraper, RiseQuestScraper, WorldQuestScraper, WildsQuestScraper # type: ignore
+from src.data_collection.scrapers.partial import TriQuestScraper, FUQuestScraper, GenerationsQuestScraper, RiseQuestScraper, WorldQuestScraper, WildsQuestScraper # type: ignore
 from src.data_collection.scrapers import MHWikiScraper, RankingScraper, CompleteQuestScraper
 from src.data_collection.scrapers.ranking_scraper import RankingScraper
 from src.data_collection.repositories import DataMerger, LocalCsvRepository
@@ -44,7 +44,7 @@ if __name__ == "__main__":
             wiki_data = repository.load("wiki_data.csv")
 
         case "TEST":
-            test_scraper = FUQuestScraper()
+            test_scraper = TriQuestScraper()
             test_data = test_scraper.scrape()
             
             print("Test Results")
@@ -52,7 +52,7 @@ if __name__ == "__main__":
             for i, data in enumerate(test_data):
                 print(i, ": ", data)
 
-            repository.save(test_data, file_name="fu_test_data.csv")
+            repository.save(test_data, file_name="tri_test_data.csv")
 
     # Merge data
     #merged_data = merger.merge(ranking_data, wiki_data)

@@ -1,3 +1,4 @@
+import logging
 import re
 from functools import cached_property
 from pathlib import Path
@@ -10,22 +11,29 @@ from src.core.helpers import file_cache #type:ignore
 from src.core.interfaces.abstract_web_scraper import AbstractWebScraper #type:ignore
 from src.core.dataclasses.quest_data import QuestItem #type:ignore
 
+logger = logging.getLogger(__name__)
+
 class FUQuestScraper(AbstractWebScraper[QuestItem]):
     """Partial Scraper Class that scrapes quest data for MH Four Ultimate.
     To be called via QuestScraper class."""
 
-    QUEST_URL = r"https://kiranico.com/en/mh4u/quest"
-    MONSTER_URL = r"https://kiranico.com/en/mh4u/monster"
+    GAME = "Four Ultimate"
+    GEN = 4
 
-    DATA_PATH = AbstractWebScraper.DATA_PATH / "subsets" / "four_ultimate"
-    QUEST_DATA_PATH = DATA_PATH / "fu_quest_data.json"
-    MONSTER_DATA_PATH = DATA_PATH / "fu_monster_data.json"
-    QUEST_LINKS_PATH = DATA_PATH / "helpers" / "fu_quest_links.txt"
-    MONSTER_LINKS_PATH = DATA_PATH / "helpers" / "fu_monster_links.txt"
-    
+    FOUR_QUEST_URL = r"https://kiranico.com/en/mh4u/quest"
+    FOUR_MONSTER_URL = r"https://kiranico.com/en/mh4u/monster"
+    TRI_QUEST_URL = r"https://kiranico.com/en/mh3u/quest"
+
+    FU_DATA_PATH = AbstractWebScraper.DATA_PATH / "subsets" / "four_ultimate"
+    FU_QUEST_DATA_PATH = FU_DATA_PATH / "fu_quest_data.json"
+    FU_MONSTER_DATA_PATH = FU_DATA_PATH / "fu_monster_data.json"
+    FU_QUEST_LINKS_PATH = FU_DATA_PATH / "helpers" / "fu_quest_links.txt"
+    FU_MONSTER_LINKS_PATH = FU_DATA_PATH / "helpers" / "fu_monster_links.txt"
+
+
 
     @cached_property
-    @file_cache("QUEST_DATA_PATH")
+    @file_cache("FU_QUEST_DATA_PATH")
     def quest_data(self) -> List[Dict[str,Any]]:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
@@ -37,7 +45,7 @@ class FUQuestScraper(AbstractWebScraper[QuestItem]):
             return _quest_data
 
     @cached_property
-    @file_cache("MONSTER_DATA_PATH")
+    @file_cache("FU_MONSTER_DATA_PATH")
     def monster_data(self) -> List[Dict[str,Any]]:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
@@ -49,12 +57,12 @@ class FUQuestScraper(AbstractWebScraper[QuestItem]):
             return _monster_data
     
     @cached_property
-    @file_cache("QUEST_LINKS_PATH")
+    @file_cache("FU_QUEST_LINKS_PATH")
     def quest_links(self) -> List[str]:
         return self._scrape_links("quest")
 
     @cached_property
-    @file_cache("MONSTER_LINKS_PATH")
+    @file_cache("FU_MONSTER_LINKS_PATH")
     def monster_links(self) -> List[str]:
         return self._scrape_links("monster")
 
@@ -88,6 +96,8 @@ class FUQuestScraper(AbstractWebScraper[QuestItem]):
             complete_data.append(
                 QuestItem(
                     title=quest.get("title"),
+                    game=self.GAME,
+                    generation=self.GEN,
                     rank=rank,
                     level=quest.get("level"),
                     is_assignment=quest.get("is_urgent"),
@@ -185,7 +195,7 @@ class FUQuestScraper(AbstractWebScraper[QuestItem]):
                 rank = "MR"
         return rank
 
-    def _scrape_links(self, type_:str) -> List[str]:
+    def _scrape_links(self, type_: str) -> List[str]:
         if not type_.lower() in ["monster", "quest"]:
             raise AttributeError(f"Type {type_} no suitable category. Try MONSTER or QUEST...")
 
