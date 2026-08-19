@@ -1,9 +1,10 @@
-import json
 import logging
-import re
-import requests
 from functools import cached_property
+from pathlib import Path
 from typing import Any, Dict, List
+
+from bs4 import BeautifulSoup
+from playwright.sync_api import Browser, sync_playwright
 
 from src.core.helpers import file_cache #type:ignore
 from src.core.interfaces.abstract_web_scraper import AbstractWebScraper #type:ignore
@@ -12,87 +13,63 @@ from src.core.dataclasses.quest_data import QuestItem #type:ignore
 logger = logging.getLogger(__name__)
 
 class FreedomQuestScraper(AbstractWebScraper[QuestItem]):
-    """Scrapes quests for Freedom/ Freedom Unit and returns list of quest items."""
-    GAME = "Freedom Unite"
-    GEN = 2
+    """Partial Scraper Class that scrapes quest data for MH Freedom.
+    To be called via QuestScraper class."""
 
-    SOURCE_REPO = r"Kolyn090/mhfu-db/refs/heads/main/Quests/"
+    GAME = "Freedom"
+    GEN = 1
+
+    VILLAGE_QUEST_URL = r"https://monsterhunter.fandom.com/wiki/MHF1:_Village_Quests"
+    GUILD_QUEST_URL = r"https://monsterhunter.fandom.com/wiki/MHF1:_Guild_Quests"
+    MONSTER_URL = r"https://monsterhunter.fandom.com/wiki/MHF1:_Monsters"
 
     DATA_PATH = AbstractWebScraper.DATA_PATH / "subsets" / "freedom"
-    CACHE_DATA = DATA_PATH / "freedom_cache_data.json" 
     QUEST_DATA_PATH = DATA_PATH / "freedom_quest_data.json"
+    MONSTER_LIST_PATH = DATA_PATH / "helpers" / "monster_list.txt"
 
     @cached_property
     @file_cache("QUEST_DATA_PATH")
     def quest_data(self) -> List[Dict[str,Any]]:
-        return []
+        soup = self.retrieve_soup(self.QUEST_URL)
+        quest_tables = soup.find_all("table", class_="themetable")
+        return [
+            quest 
+            for table in quest_tables
+            if (quest := self.scrape_quest(table))
+        ]
 
     @cached_property
-    @file_cache("CACHE_DATA")
-    def cached_quest_data(self) -> List[Dict[str,Any]]:
-        return self.fetch_quest_data()
-
-    @cached_property
-    def raw_cache_data(self) -> Dict[str, List[Dict[str, Any]]]:
-        return self._fetch_handler_data_from_github() 
+    @file_cache("MONSTER_LIST_PATH", overwrite=True)
+    def monster_list(self) -> List[str]:
+        return self._scrape_monster_list()
 
     def scrape(self) -> List[QuestItem]:
-        return [
-            QuestItem(
-                title=quest.get("name"),
-                game=self.GAME,
-                generation=self.GEN,
-                rank=self._match_rank(handler = quest.get("handler")),
-                level=quest.get("difficulty"),
-                is_assignment=quest.get("quest-type", "").strip() == "key",
-                targets=quest.get("difficulty"),
-                reward_zenny=quest.get("reward")
-            )
-            for quest in self.cached_quest_data
-        ]
+        return []
 
-    def _match_rank(self, handler) -> str:
-        match handler:
-            case "Elder":
-                rank = "LR"
-            case "Nekoht":
-                rank = "HR"
-            case "Guild_LR":
-                rank = "LR"
-            case "Guild_HR":
-                rank = "HR"
-            case "Guild_MR":
-                rank = "MR"
-            case _:
-                rank = f"unknown: {handler}"
+    def scrape_quest(self, table = BeautifulSoup) -> Dict[str,Any] | None:
+        return {}
+
+    def _match_rank(self, hub:str, level:int) -> str:
+        rank = ""
         return rank
 
-    def fetch_quest_data(self) -> List[Dict[str, Any]]:
+    def _scrape_monster_list(self) -> List[str]:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=False)
+
+            soup = self.retrieve_rendered_soup(browser=browser, url=self.MONSTER_URL)
+            start_header = soup.find("span", class_="mw-headline", id="Large_Monsters", string="Large Monsters")
+
+            t1 = start_header.find_next("table")
+            t2 = t1.find_next("table") if t1 else None
+            tables = [t for t in (t1, t2) if t]
+
+            browser.close()
+
         return [
-            {**quest, "handler": handler}
-            for handler, quest_list in self.raw_cache_data.items()
-            for quest in quest_list
-            if isinstance(quest, dict) 
+            title
+            for table in tables
+            for a in table.find_all("a", href=True, title=True)
+            if a.find("font")
+            and (title := a.get("title", "").strip())
         ]
-
-    def _fetch_handler_data_from_github(self) -> Dict[str, List[Dict[str, Any]]]:
-        files_to_fetch = {
-            "Elder" : "elder.json",
-            "Nekoht" : "nekoht.json",
-            "Guild_LR" : "gal-1.json",
-            "Guild_HR" : "gal-2.json",
-            "Guild_MR" : "gal-3.json",
-        }
-
-        raw_quest_data = {}
-        for handler, file in files_to_fetch.items():
-            url = f"https://raw.githubusercontent.com/{self.SOURCE_REPO}/{file}"
-            response = requests.get(url)
-            logger.info(f"Fetching data from {url}...")
-
-            if response.status_code == 200:
-                raw_quest_data[handler] = response.json()
-            else:
-                logger.warning(f"Issue with fetching {handler}-data: {response.status_code}")
-
-        return raw_quest_data
