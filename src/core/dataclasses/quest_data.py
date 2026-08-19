@@ -19,5 +19,5 @@ class QuestItem:
     targets: List[str] = field(default_factory=list)
     target_hp: List[Dict[str,int]] = field(default_factory=list)
 
-    reward_zenny: Optional[int] = None
-    reward_points: Optional[int] = None
+    reward_zenny: Optional[int] = 0
+    reward_points: Optional[int] = 0
