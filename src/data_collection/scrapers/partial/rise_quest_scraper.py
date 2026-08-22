@@ -66,7 +66,7 @@ class RiseQuestScraper(AbstractWebScraper[QuestItem]):
         return[
             QuestItem(
                 title=quest["title"],
-                id=quest["id"],
+                quest_id=quest["id"],
                 game=self.GAME,
                 generation=self.GEN,
                 rank=quest["rank"],

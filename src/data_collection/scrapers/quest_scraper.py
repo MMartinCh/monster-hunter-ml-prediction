@@ -1,40 +1,51 @@
 import logging
-from typing import List
+from typing import List, Optional
 
-from src.core.dataclasses import QuestItem
-from src.core.interfaces import AbstractWebScraper
-from src.data_collection.scrapers.partial import RiseQuestScraper, WildsQuestScraper, WorldQuestScraper
+from src.core.dataclasses import QuestItem #type:ignore
+from src.core.interfaces import AbstractWebScraper #type:ignore
+from src.data_collection.scrapers.partial import ( #type:ignore
+    TriQuestScraper,
+    FourQuestScraper,
+    FreedomQuestScraper,
+    FUQuestScraper,
+    GenerationsQuestScraper,
+    RiseQuestScraper,
+    WildsQuestScraper,
+    WorldQuestScraper,
+)
 
 logger = logging.getLogger(__name__)
 
 class CompleteQuestScraper(AbstractWebScraper[QuestItem]):
-    """Pipeline calling all PartialQuestScraper classes and merging them to complete quest info dataset."""
+    """Pipeline calling all PartialQuestScraper classes and merging them into a complete quest dataset."""
 
-    # TODO: Add column to db, from where the monster was scraped.
-    # TODO: gather data from all quests, transform later
+    def __init__(
+        self,
+        tri_quest_scraper: Optional[TriQuestScraper] = None,
+        four_quest_scraper: Optional[FourQuestScraper] = None,
+        freedom_quest_scraper: Optional[FreedomQuestScraper] = None,
+        fu_quest_scraper: Optional[FUQuestScraper] = None,
+        generations_quest_scraper: Optional[GenerationsQuestScraper] = None,
+        rise_quest_scraper: Optional[RiseQuestScraper] = None, 
+        wilds_quest_scraper: Optional[WildsQuestScraper] = None, 
+        world_quest_scraper: Optional[WorldQuestScraper] = None,
+    ) -> None:
 
-    def __init__(self,
-                rise_quest_scraper: RiseQuestScraper, 
-                wilds_quest_scraper: WildsQuestScraper, 
-                world_quest_scraper: WorldQuestScraper
-                ) -> None:
-
-        self.rise_quest_scraper = rise_quest_scraper
-        self.wilds_quest_scraper = wilds_quest_scraper
-        self.world_quest_scraper = world_quest_scraper
+        self.scrapers: List[AbstractWebScraper[QuestItem]] = [
+            tri_quest_scraper or TriQuestScraper(),
+            four_quest_scraper or FourQuestScraper(),
+            freedom_quest_scraper or FreedomQuestScraper(),
+            fu_quest_scraper or FUQuestScraper(),
+            generations_quest_scraper or GenerationsQuestScraper(),
+            rise_quest_scraper or RiseQuestScraper(),
+            world_quest_scraper or WorldQuestScraper(),
+            wilds_quest_scraper or WildsQuestScraper(),
+        ]
 
     def scrape(self) -> List[QuestItem]:
-        """Scrape quests from Monster Hunter main line games in order of sales: World -> Rise -> Wilds... 
-        Keep first entry for in-game data only. Sum up meta-data.
-        """
-
-        # TODO: complete all quest scrapers
-
-        world_data = self.world_quest_scraper.scrape()
-        rise_data = self.rise_quest_scraper.scrape()
-        wilds_data = self.wilds_quest_scraper.scrape()
-
-    def merge_quest_data(self, quest_data_arrays: List[List[QuestItem]]) -> List[QuestItem]:
-        """Merges quest data for every game into a unified list of QuestItem objects."""
-        # TODO: implement function to merge individual QuestItems
-        return ...
+        """Scrape quests from all main line games and return a flat list of QuestItems."""
+        return [
+            quest 
+            for scraper in self.scrapers 
+            for quest in scraper.scrape()
+        ]

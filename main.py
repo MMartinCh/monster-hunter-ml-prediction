@@ -44,15 +44,15 @@ if __name__ == "__main__":
             wiki_data = repository.load("wiki_data.csv")
 
         case "TEST":
-            test_scraper = FreedomQuestScraper()
-            test_data = test_scraper.monster_list
+            test_scraper = CompleteQuestScraper()
+            test_data = test_scraper.scrape()
             
             print("Test Results")
             print("="*30)
             for quest in test_data:
                 print(quest)
 
-            #repository.save(test_data, file_name="freedom_test_data.csv")
+            repository.save(test_data, file_name="complete_test_data.csv")
 
     # Merge data
     #merged_data = merger.merge(ranking_data, wiki_data)
